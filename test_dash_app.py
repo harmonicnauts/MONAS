@@ -26,8 +26,8 @@ humid_model_xgb = XGBRegressor()
 
 
 # Load dataframes
-df_wmoid = pd.read_excel('../../Data/daftar_wmoid.xlsx') # UPT Dataframe
-ina_nwp_input = pd.read_csv('../../Data/MONAS-input_nwp_compile.csv') # Feature to predict from INA-NWP
+df_wmoid = pd.read_excel('./Data/daftar_wmoid.xlsx') # UPT Dataframe
+ina_nwp_input = pd.read_csv('./Data/MONAS-input_nwp_compile.csv') # Feature to predict from INA-NWP
 
 df_wmoid = df_wmoid.rename(columns={'WMOID': 'lokasi'}) # WMOID dataframe preproceses
 df_wmoid = df_wmoid[['lokasi', 'Nama UPT']]
