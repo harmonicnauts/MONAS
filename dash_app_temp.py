@@ -403,4 +403,4 @@ def upt_click(feature):
         return (slider_value, min_abs, max_abs, figure)
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(host= '0.0.0.0',debug=False)
