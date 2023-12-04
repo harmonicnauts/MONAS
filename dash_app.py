@@ -395,15 +395,15 @@ app.layout = html.Div([
 
                             html.Div([
                                 html.Div([
-                                    html.Label("Lowest Value", id = "metric-label",  style={"font-weight": "bold"}),
+                                    html.Label("Lowest Value", style={"font-weight": "bold"}),
                                     html.Div(id='low-temp', style={"font-size": "20px"}, children='0')
                                 ], style={'width': '33%', 'display': 'inline-block'}),
                                 html.Div([
-                                    html.Label("Average Value", id = "metric-label", style={"font-weight": "bold"}),
+                                    html.Label("Average Value", style={"font-weight": "bold"}),
                                     html.Div(id='avg-temp', style={"font-size": "20px"}, children='0')
                                 ], style={'width': '33%', 'display': 'inline-block'}),
                                 html.Div([
-                                    html.Label("Highest Value", id = "metric-label", style={"font-weight": "bold"}),
+                                    html.Label("Highest Value", style={"font-weight": "bold"}),
                                     html.Div(id='high-temp', style={"font-size": "20px"}, children='0')
                                 ], style={'width': '33%', 'display': 'inline-block'}),
                             ]),
