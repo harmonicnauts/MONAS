@@ -390,12 +390,24 @@ app.layout = html.Div([
                                 value=[0,0],
                                 step=None,
                                 vertical=False,
-                                tooltip={
-                                    "placement": "bottom", 
-                                    "always_visible": True
-                                    },
                                 disabled=True,
                             ),
+
+                            html.Div([
+                                html.Div([
+                                    html.Label("Lowest Value", id = "metric-label",  style={"font-weight": "bold"}),
+                                    html.Div(id='low-temp', style={"font-size": "20px"}, children='0')
+                                ], style={'width': '33%', 'display': 'inline-block'}),
+                                html.Div([
+                                    html.Label("Average Value", id = "metric-label", style={"font-weight": "bold"}),
+                                    html.Div(id='avg-temp', style={"font-size": "20px"}, children='0')
+                                ], style={'width': '33%', 'display': 'inline-block'}),
+                                html.Div([
+                                    html.Label("Highest Value", id = "metric-label", style={"font-weight": "bold"}),
+                                    html.Div(id='high-temp', style={"font-size": "20px"}, children='0')
+                                ], style={'width': '33%', 'display': 'inline-block'}),
+                            ]),
+
                             
                         ]),
                     ], 
@@ -493,6 +505,10 @@ def get_datatable(wmoid_lokasi, prop_lokasi, column):
         Output("map-colorbar", "min"), # colorbar's minimum value
         Output("map-colorbar", "max"), # colorbar's maximum value
         Output("map-colorbar", "unit"), # colorbar's unit
+
+        Output("low-temp", "children"),
+        Output("avg-temp", "children"),
+        Output("high-temp", "children"),
 
         Input ("geojson", "clickData"), # Marker OnClick Event
         Input ("graph-tabs", "value"), # Value of currently selected tab
@@ -594,8 +610,8 @@ def upt_click(feature, tabs_value):
         return (slider_value, min_abs, max_abs, figure, 
                 hideout, 
                 colorscale, min_abs, max_abs, unit,
-                
+                min, avg, max
                 )
 
 if __name__ == '__main__':
-    app.run_server(host= '0.0.0.0',debug=False)
+    app.run_server(debug=True)
