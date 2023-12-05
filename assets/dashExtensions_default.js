@@ -7,7 +7,8 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 style='
                 border: 1px solid black;
                 border-radius: 5px;
-                font-size: 15px;'
+                font-size: 15px;
+                padding : 3px;'
                 >
                 <img style = 'width : 20px' src="https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"/>
                 <strong>${feature['properties']['Nama UPT']}</strong><br>

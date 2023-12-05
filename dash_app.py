@@ -191,7 +191,8 @@ on_each_feature = assign(
                 style='
                 border: 1px solid black;
                 border-radius: 5px;
-                font-size: 15px;'
+                font-size: 15px;
+                padding : 3px;'
                 >
                 <img style = 'width : 20px' src="https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"/>
                 <strong>${feature['properties']['Nama UPT']}</strong><br>
@@ -477,7 +478,7 @@ def plot_graph(df_graph, upt_name, nwp_output, graph_type):
                 x=df_graph['Date'], 
                 y=df_graph[nwp_output], 
                 mode='lines', 
-                name=f'Output {type} 2m INA-NWP',
+                name=f'Output {graph_type} 2m INA-NWP',
                 line_shape='spline'
                 )
         
@@ -630,4 +631,5 @@ def upt_click(feature, tabs_value):
                 )
 
 if __name__ == '__main__':
-    app.run_server(host= '0.0.0.0',debug=False)
+    # app.run_server(host= '0.0.0.0',debug=False)
+    app.run_server(host= '127.0.0.1',debug=True)
