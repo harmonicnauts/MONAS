@@ -186,7 +186,23 @@ BMKG_LOGO = "https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"
 on_each_feature = assign(
     """function(feature, layer, context){
         if(feature.properties.lokasi){
-            layer.bindTooltip(`${feature['properties']['Nama UPT']} \nKode:${feature['properties']['lokasi']} \n Koord : (${feature['properties']['LAT']},${feature['properties']['LON']})`)
+            var tooltipContent = `
+            <div 
+                style='
+                border: 1px solid black;
+                border-radius: 5px;
+                font-size: 15px;'
+                >
+                <img style = 'width : 20px' src="https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"/>
+                <strong>${feature['properties']['Nama UPT']}</strong><br>
+                <p>Kode: ${feature['properties']['lokasi']}</p>
+                <p>Koord: (${feature['properties']['LAT']}, ${feature['properties']['LON']})</p>
+                <p>Temperature : <span style = 'color: red'; >${feature['properties']['average temp']}</span> C</p>
+                <p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['average humidity']}</span>%</p>
+                <p>Precipitation : <span style = 'color: purple';>${feature['properties']['average precipitation']}</span>mm.</p>
+            </div>
+                `;
+            layer.bindTooltip(tooltipContent, { sticky: true });
         }
     }
     """)
@@ -614,4 +630,4 @@ def upt_click(feature, tabs_value):
                 )
 
 if __name__ == '__main__':
-    app.run_server(host= '0.0.0.0',debug=False)
+    app.run_server(host= '127.0.0.1',debug=True)

@@ -78,7 +78,7 @@ ina_nwp_input_filtered = ina_nwp_input_filtered.rename(
 
 # Load ML Models
 # etr = pickle.load(open('weather_extra_trees_regressor.pkl', 'rb'))
-temp_model_xgb = joblib.load('./models/Temp_xgb_tuned__bagged_30_noShuffle.joblib')
+temp_model_xgb.load_model('./models/Temp_xgb_tuned_R2_77.json')
 humid_model_xgb.load_model('./models/humid_xgb_tuned_noShuffle.json')
 with open('./models/huber_regressor_bad.pkl','rb') as f:
     prec_model = pickle.load(f)
@@ -311,11 +311,11 @@ app.layout = html.Div([
     # ),
 
     html.Div([
-        html.Div([  # Wrap the map and header in a div for layout
+        html.Div([
             dl.Map(
                 [
                     dl.TileLayer(), 
-                    dl.ScaleControl(position="bottomleft"),
+                    dl.ScaleControl(position="bottomleft"), 
                     dl.FullScreenControl(),
                     upt,
                     colorbar,
@@ -325,7 +325,8 @@ app.layout = html.Div([
                 id = 'dash-leaflet-map',
                 style={
                     'height': '90vh', 
-                    'width' : '50vw'
+                    'width' : '95vw',
+                    'z-index' : -1,
                     }
                 ),
             html.Div([
@@ -390,12 +391,24 @@ app.layout = html.Div([
                                 value=[0,0],
                                 step=None,
                                 vertical=False,
-                                tooltip={
-                                    "placement": "bottom", 
-                                    "always_visible": True
-                                    },
                                 disabled=True,
                             ),
+
+                            html.Div([
+                                html.Div([
+                                    html.Label("Lowest Value", style={"font-weight": "bold"}),
+                                    html.Div(id='low-temp', style={"font-size": "20px"}, children='0')
+                                ], style={'width': '33%', 'display': 'inline-block'}),
+                                html.Div([
+                                    html.Label("Average Value", style={"font-weight": "bold"}),
+                                    html.Div(id='avg-temp', style={"font-size": "20px"}, children='0')
+                                ], style={'width': '33%', 'display': 'inline-block'}),
+                                html.Div([
+                                    html.Label("Highest Value", style={"font-weight": "bold"}),
+                                    html.Div(id='high-temp', style={"font-size": "20px"}, children='0')
+                                ], style={'width': '33%', 'display': 'inline-block'}),
+                            ]),
+
                             
                         ]),
                     ], 
@@ -411,12 +424,24 @@ app.layout = html.Div([
                     'grid-auto-flow': 'row'
                     }
                 ),  # Display elements side by side
-            ]),
+            ], 
+            style={
+                'display': 'grid',
+                'z-index': 1000,
+                'grid-column': 'auto auto',
+                'grid-auto-flow': 'column',
+                'position': 'absolute',
+                'bottom': 0,
+                'right': 0,
+                'margin-bottom': '10px',
+                'margin-right': '10px',
+            }),
         ], 
-        style={
+        style = {
             'display' : 'grid',
             'grid-column': 'auto auto',
-            'grid-auto-flow': 'column'
+            'grid-auto-flow': 'column',
+            'position': 'relative',
             }),
         html.Div([# Div for other details such as comparison graph, data tables, and other metrics 
                 dash_table.DataTable(
@@ -426,7 +451,8 @@ app.layout = html.Div([
                 style= {
                     'display': 'grid', 
                     'grid-column': 'auto auto',
-                    'grid-auto-flow': 'row'
+                    'grid-auto-flow': 'row',
+                    'position': 'relative',
                 }
                 ),
     ])
@@ -493,6 +519,10 @@ def get_datatable(wmoid_lokasi, prop_lokasi, column):
         Output("map-colorbar", "min"), # colorbar's minimum value
         Output("map-colorbar", "max"), # colorbar's maximum value
         Output("map-colorbar", "unit"), # colorbar's unit
+
+        Output("low-temp", "children"),
+        Output("avg-temp", "children"),
+        Output("high-temp", "children"),
 
         Input ("geojson", "clickData"), # Marker OnClick Event
         Input ("graph-tabs", "value"), # Value of currently selected tab
@@ -594,8 +624,9 @@ def upt_click(feature, tabs_value):
         return (slider_value, min_abs, max_abs, figure, 
                 hideout, 
                 colorscale, min_abs, max_abs, unit,
-                
+                min, avg, max
                 )
 
 if __name__ == '__main__':
+    # app.run_server(host= '0.0.0.0',debug=False)
     app.run_server(debug=True)
