@@ -292,6 +292,8 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 # Begin
 app = Dash(__name__, external_scripts=[chroma],  external_stylesheets=external_stylesheets, prevent_initial_callbacks=True)
 
+app.title = 'MONAS Dashboard' 
+
 app.layout = html.Div([
     dbc.Container(
         [
