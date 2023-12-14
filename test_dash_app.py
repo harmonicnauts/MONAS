@@ -8,26 +8,21 @@ import geopandas
 import dash_leaflet.express as dlx
 import dash_bootstrap_components as dbc
 from dash_extensions.javascript import assign
-from xgboost import XGBRegressor
-import pickle
-import joblib
-import os
+import requests
+
 
 # List of models
-pathway = './models'
+# pathway = './models'
 
-files = [f for f in os.listdir(pathway)]
+# files = [f for f in os.listdir(pathway)]
 
-
-# Initiate xgb
-temp_model_xgb = XGBRegressor()
-humid_model_xgb = XGBRegressor()
-
-
+# Set up the API URL and file
+api_url = 'http://127.0.0.1:5000/predict'  # Adjust the URL based on your API
+input_file_path = './Data/MONAS-input_nwp_compile.csv'  # Adjust the file path
 
 # Load dataframes
 df_wmoid = pd.read_excel('./Data/daftar_wmoid.xlsx') # UPT Dataframe
-ina_nwp_input = pd.read_csv('./Data/MONAS-input_nwp_compile.csv') # Feature to predict from INA-NWP
+ina_nwp_input = pd.read_csv(input_file_path) # Feature to predict from INA-NWP
 
 df_wmoid = df_wmoid.rename(columns={'WMOID': 'lokasi'}) # WMOID dataframe preproceses
 df_wmoid = df_wmoid[['lokasi', 'Nama UPT']]
@@ -38,83 +33,19 @@ df_wmoid = df_wmoid[['lokasi', 'Nama UPT']]
 df_map = df_wmoid.merge(ina_nwp_input, on='lokasi')
 df_map = df_map[['lokasi', 'Nama UPT', 'LON', 'LAT']].drop_duplicates()
 
+# Create a dictionary to store the file in the 'file' key
+files = {'input': ('MONAS-input_nwp_compile.csv', open(input_file_path, 'rb'))}
 
+# Send the POST request to the API
+response = requests.post(api_url, files=files)
 
-# INA-NWP input preprocess
-ina_nwp_input_filtered = ina_nwp_input.drop(columns=['Date', 'LAT', 'LON'])  
-ina_nwp_input_filtered = ina_nwp_input_filtered.rename(
-    columns={
-        'suhu2m(degC)' : 'suhu2m.degC.',
-        'dew2m(degC)' : 'dew2m.degC.',
-        'rh2m(%)' : 'rh2m...',
-        'wspeed(m/s)' : 'wspeed.m.s.',
-        'wdir(deg)' : 'wdir.deg.',
-        'lcloud(%)' : 'lcloud...',
-        'mcloud(%)' : 'mcloud...' ,
-        'hcloud(%)' : 'hcloud...',
-        'surpre(Pa)' : 'surpre.Pa.' ,
-        'clmix(kg/kg)' : 'clmix.kg.kg.' ,
-        'wamix(kg/kg)' : 'wamix.kg.kg.' ,
-        'outlr(W/m2)' : 'outlr.W.m2.' ,
-        'pblh(m)' : 'pblh.m.',
-        'lifcl(m)' : 'lifcl.m.' ,
-        'cape(j/kg)' : 'cape.j.kg.' ,
-        'mdbz' : 'mdbz' ,
-        't950(degC)' : 't950.degC.' ,
-        'rh950(%)' : 'rh950...',
-        'ws950(m/s)' : 'ws950.m.s.' ,
-        'wd950(deg)' : 'wd950.deg.' ,
-        't800(degC)' : 't800.degC.' ,
-        'rh800(%)' : 'rh800...' ,
-        'ws800(m/s)' : 'ws800.m.s.',
-        'wd800(deg)' : 'wd800.deg.' ,
-        't500(degC)' : 't500.degC.' ,
-        'rh500(%)' : 'rh500...' ,
-        'ws500(m/s)' : 'ws500.m.s.' ,
-        'wd500(deg)' : 'wd500.deg.',
-})
+if response.status_code == 200:
+    # Parse the JSON response into a list
+    predictions_json = json.loads(response.text)
 
-
-
-# Load ML Models
-# etr = pickle.load(open('weather_extra_trees_regressor.pkl', 'rb'))
-temp_model_xgb.load_model('./models/Temp_xgb_tuned_R2_77.json')
-humid_model_xgb.load_model('./models/humid_xgb_tuned_noShuffle.json')
-with open('./models/huber_regressor_bad.pkl','rb') as f:
-    prec_model = pickle.load(f)
-
-print(ina_nwp_input_filtered.columns)
-temp_pred = temp_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['lokasi', 'lcloud...','mcloud...', 'hcloud...', 'clmix.kg.kg.', 'wamix.kg.kg.', 'prec_nwp']))
-humid_pred = humid_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['prec_nwp']))
-prec_pred = prec_model.predict(ina_nwp_input_filtered[[
-    'lokasi', 'suhu2m.degC.', 'dew2m.degC.', 'rh2m...', 'wspeed.m.s.',
-    'wdir.deg.', 'lcloud...', 'mcloud...', 'hcloud...', 'surpre.Pa.',
-    'clmix.kg.kg.', 'wamix.kg.kg.', 'outlr.W.m2.', 'pblh.m.', 'lifcl.m.',
-    'cape.j.kg.', 'mdbz', 't950.degC.', 'rh950...', 'ws950.m.s.',
-    'wd950.deg.', 't800.degC.', 'rh800...', 'ws800.m.s.', 'wd800.deg.',
-    't500.degC.', 'rh500...', 'ws500.m.s.', 'wd500.deg.', 'ELEV',
-    'prec_nwp'
-]])
-
-
-
-
-#OUTPUT TEMP
-df_pred_temp = pd.concat([ina_nwp_input['Date'], ina_nwp_input_filtered[['lokasi', 'suhu2m.degC.']], pd.Series(temp_pred, index = ina_nwp_input_filtered.index)], axis=1)
-df_pred_temp.columns = ['Date','lokasi', 'suhu2m.degC.', 'prediction']
-df_pred_temp = df_pred_temp.dropna()
-
-
-
-#OUTPUT HUMIDITY
-df_pred_humid = pd.concat([ina_nwp_input['Date'], ina_nwp_input_filtered[['lokasi', 'rh2m...']], pd.Series(humid_pred, index = ina_nwp_input_filtered.index)], axis=1)
-df_pred_humid.columns = ['Date','lokasi', 'rh2m...', 'prediction']
-df_pred_humid = df_pred_humid.dropna()
-
-#OUTPUT Precipitation
-df_pred_prec = pd.concat([ina_nwp_input['Date'], ina_nwp_input_filtered[['lokasi', 'prec_nwp']], pd.Series(prec_pred, index = ina_nwp_input_filtered.index)], axis=1)
-df_pred_prec.columns = ['Date','lokasi', 'prec_nwp', 'prediction']
-df_pred_prec = df_pred_prec.dropna()
+df_pred_humid = pd.DataFrame(predictions_json["humidity"])
+df_pred_temp = pd.DataFrame(predictions_json["temperature"])
+df_pred_prec = pd.DataFrame(predictions_json["precipitation"])
 
 
 # Load script 
@@ -186,7 +117,24 @@ BMKG_LOGO = "https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"
 on_each_feature = assign(
     """function(feature, layer, context){
         if(feature.properties.lokasi){
-            layer.bindTooltip(`${feature['properties']['Nama UPT']} \nKode:${feature['properties']['lokasi']} \n Koord : (${feature['properties']['LAT']},${feature['properties']['LON']})`)
+            var tooltipContent = `
+            <div 
+                style='
+                border: 1px solid black;
+                border-radius: 5px;
+                font-size: 15px;
+                padding : 3px;'
+                >
+                <img style = 'width : 20px' src="https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"/>
+                <strong>${feature['properties']['Nama UPT']}</strong><br>
+                <p>Kode: ${feature['properties']['lokasi']}</p>
+                <p>Koord: (${feature['properties']['LAT']}, ${feature['properties']['LON']})</p>
+                <p>Temperature : <span style = 'color: red'; >${feature['properties']['average temp']}</span> C</p>
+                <p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['average humidity']}</span>%</p>
+                <p>Precipitation : <span style = 'color: purple';>${feature['properties']['average precipitation']}</span>mm.</p>
+            </div>
+                `;
+            layer.bindTooltip(tooltipContent, { sticky: true });
         }
     }
     """)
@@ -275,6 +223,8 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 # Begin
 app = Dash(__name__, external_scripts=[chroma],  external_stylesheets=external_stylesheets, prevent_initial_callbacks=True)
 
+app.title = 'MONAS Dashboard' 
+
 app.layout = html.Div([
     dbc.Container(
         [
@@ -311,11 +261,11 @@ app.layout = html.Div([
     # ),
 
     html.Div([
-        html.Div([
+        html.Div([  # Wrap the map and header in a div for layout
             dl.Map(
                 [
                     dl.TileLayer(), 
-                    dl.ScaleControl(position="bottomleft"), 
+                    dl.ScaleControl(position="bottomleft"),
                     dl.FullScreenControl(),
                     upt,
                     colorbar,
@@ -325,8 +275,7 @@ app.layout = html.Div([
                 id = 'dash-leaflet-map',
                 style={
                     'height': '90vh', 
-                    'width' : '95vw',
-                    'z-index' : -1,
+                    'width' : '50vw'
                     }
                 ),
             html.Div([
@@ -424,24 +373,12 @@ app.layout = html.Div([
                     'grid-auto-flow': 'row'
                     }
                 ),  # Display elements side by side
-            ], 
-            style={
-                'display': 'grid',
-                'z-index': 1000,
-                'grid-column': 'auto auto',
-                'grid-auto-flow': 'column',
-                'position': 'absolute',
-                'bottom': 0,
-                'right': 0,
-                'margin-bottom': '10px',
-                'margin-right': '10px',
-            }),
+            ]),
         ], 
-        style = {
+        style={
             'display' : 'grid',
             'grid-column': 'auto auto',
-            'grid-auto-flow': 'column',
-            'position': 'relative',
+            'grid-auto-flow': 'column'
             }),
         html.Div([# Div for other details such as comparison graph, data tables, and other metrics 
                 dash_table.DataTable(
@@ -451,8 +388,7 @@ app.layout = html.Div([
                 style= {
                     'display': 'grid', 
                     'grid-column': 'auto auto',
-                    'grid-auto-flow': 'row',
-                    'position': 'relative',
+                    'grid-auto-flow': 'row'
                 }
                 ),
     ])
@@ -475,7 +411,7 @@ def plot_graph(df_graph, upt_name, nwp_output, graph_type):
                 x=df_graph['Date'], 
                 y=df_graph[nwp_output], 
                 mode='lines', 
-                name=f'Output {type} 2m INA-NWP',
+                name=f'Output {graph_type} 2m INA-NWP',
                 line_shape='spline'
                 )
         
@@ -629,4 +565,4 @@ def upt_click(feature, tabs_value):
 
 if __name__ == '__main__':
     # app.run_server(host= '0.0.0.0',debug=False)
-    app.run_server(debug=True)
+    app.run_server(host= '127.0.0.1',debug=True)
