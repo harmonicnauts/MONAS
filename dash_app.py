@@ -79,13 +79,13 @@ ina_nwp_input_filtered = ina_nwp_input_filtered.rename(
 # Load ML Models
 # etr = pickle.load(open('weather_extra_trees_regressor.pkl', 'rb'))
 temp_model_xgb.load_model('./models/Temp_xgb_tuned_R2_77.json')
-humid_model_xgb.load_model('./models/humid_xgb_tuned_noShuffle.json')
+humid_model_xgb.load_model('./models/xgbregressor_humidity.json')
 with open('./models/huber_regressor_bad.pkl','rb') as f:
     prec_model = pickle.load(f)
 
 print(ina_nwp_input_filtered.columns)
 temp_pred = temp_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['lokasi', 'lcloud...','mcloud...', 'hcloud...', 'clmix.kg.kg.', 'wamix.kg.kg.', 'prec_nwp']))
-humid_pred = humid_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['prec_nwp']))
+humid_pred = humid_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['prec_nwp', 'mcloud...', 'wamix.kg.kg.', 'clmix.kg.kg.', 'lcloud...', 'hcloud...']))
 prec_pred = prec_model.predict(ina_nwp_input_filtered[[
     'lokasi', 'suhu2m.degC.', 'dew2m.degC.', 'rh2m...', 'wspeed.m.s.',
     'wdir.deg.', 'lcloud...', 'mcloud...', 'hcloud...', 'surpre.Pa.',
@@ -633,5 +633,5 @@ def upt_click(feature, tabs_value):
                 )
 
 if __name__ == '__main__':
-    app.run_server(host= '0.0.0.0',debug=False)
-    # app.run_server(host= '127.0.0.1',debug=True)
+    # app.run_server(host= '0.0.0.0',debug=False)
+    app.run_server(host= '127.0.0.1',debug=True)
