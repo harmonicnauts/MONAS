@@ -299,125 +299,165 @@ app.title = 'MONAS Dashboard'
 app.layout = html.Div([
     dbc.Container(
         [
-            dbc.Row(
-                [
-                    dbc.Col(html.Img(src=BMKG_LOGO, height="55px"), width=2),
-                    dbc.Col(dbc.NavbarBrand("MONAS Dashboard", className="ms-2")),
+            html.A(
+                # Use row and col to control vertical alignment of logo / brand
+                [dbc.Row(
+                    [
+                        dbc.Col(html.Img(src=BMKG_LOGO, height="55px")),
+                        dbc.Col(dbc.NavbarBrand(className="ms-2")),
+                        
+                    ],
+                    align="center",
+                    className="g-0 d-flex flex-column align-items-center justify m-2",
+                ),
+                html.H1(children='MONAS Dashboard'),
                 ],
-                align="center",
-                className="g-0 d-flex flex-column align-items-center justify-content m-2",
+                href="#",
+                style={
+                    "textDecoration": "none",
+                    "display" : "flex",
+                    "align-content": "center",
+                    "justify-content" : "center",
+                    "flex-direction" : "row",
+                    },
             ),
         ],
-        fluid=True,
+        fluid=True  # Set the container to fluid
     ),
 
-    dbc.Row([
-        dbc.Col([
-            dcc.Tabs(
-                id="graph-tabs",
-                value='temp-tab',
-                parent_className='custom-tabs',
-                className='custom-tabs-container',
-                children=[
-                    dcc.Tab(
-                        label='Temperature',
-                        value='temp-tab',
-                        className='custom-tab',
-                        selected_className='custom-tab--selected'
-                    ),
-                    dcc.Tab(
-                        label='Humidity',
-                        value='humid-tab',
-                        className='custom-tab',
-                        selected_className='custom-tab--selected'
-                    ),
-                    dcc.Tab(
-                        label='Precipitation',
-                        value='prec-tab',
-                        className='custom-tab',
-                        selected_className='custom-tab--selected'
-                    ),
-                ]
-            ),
-            dcc.Loading(
-                dcc.Graph(
-                    id='graph_per_loc',
-                    figure={
-                        'layout': {
-                            "xaxis": {"visible": False},
-                            "yaxis": {"visible": False},
-                            "annotations": [
-                                {
-                                    "text": "Click on one of the Station in the map to view graph.",
-                                    "xref": "paper",
-                                    "yref": "paper",
-                                    "showarrow": False,
-                                    "font": {"size": 18},
-                                }
-                            ]
-                        }
+    html.Div([
+        html.Div([  # Wrap the map and header in a div for layout
+            dl.Map(
+                [
+                    dl.TileLayer(), 
+                    dl.ScaleControl(position="bottomleft"),
+                    dl.FullScreenControl(),
+                    upt,
+                    colorbar,
+                ],
+                center=[-2.058210136999589, 116.78386542384145],
+                markerZoomAnimation=True,
+                id='dash-leaflet-map',
+                style={
+                    'height': '90vh', 
+                    'width': '50vw'
                     }
-                ),
-            ),
-            dcc.RangeSlider(
-                id='graph-metric',
-                min=0,
-                max=40,
-                value=[0, 0],
-                step=None,
-                vertical=False,
-                disabled=True,
             ),
             html.Div([
-                dbc.Row([
-                    dbc.Col(html.Label("Lowest Value", style={"font-weight": "bold"})),
-                    dbc.Col(html.Div(id='low-temp', style={"font-size": "20px"}, children='0')),
-                ]),
-                dbc.Row([
-                    dbc.Col(html.Label("Average Value", style={"font-weight": "bold"})),
-                    dbc.Col(html.Div(id='avg-temp', style={"font-size": "20px"}, children='0')),
-                ]),
-                dbc.Row([
-                    dbc.Col(html.Label("Highest Value", style={"font-weight": "bold"})),
-                    dbc.Col(html.Div(id='high-temp', style={"font-size": "20px"}, children='0')),
-                ]),
-            ]),
-        ], xs=12, md=6),
+                html.Div([
+                    html.Div([  # Div for map, metric, and graph
+                        html.Div([
+                            dcc.Tabs(
+                                id="graph-tabs",
+                                value='temp-tab',
+                                parent_className='custom-tabs',
+                                className='custom-tabs-container',
+                                children=[
+                                    dcc.Tab(
+                                        label='Temperature',
+                                        value='temp-tab',
+                                        className='custom-tab',
+                                        selected_className='custom-tab--selected'
+                                    ),
+                                    dcc.Tab(
+                                        label='Humidity',
+                                        value='humid-tab',
+                                        className='custom-tab',
+                                        selected_className='custom-tab--selected'
+                                    ),
+                                    dcc.Tab(
+                                        label='Precipitation',
+                                        value='prec-tab',
+                                        className='custom-tab',
+                                        selected_className='custom-tab--selected'
+                                    ),
+                            ]),
+                            dcc.Loading(
+                                dcc.Graph(
+                                    id='graph_per_loc',
+                                    figure={
+                                        'layout': {
+                                            "xaxis": {
+                                                "visible": False
+                                            },
+                                            "yaxis": {
+                                                "visible": False
+                                            },
+                                            "annotations": [
+                                                {
+                                                    "text": "Click on one of the Station in the map to view graph.",
+                                                    "xref": "paper",
+                                                    "yref": "paper",
+                                                    "showarrow": False,
+                                                    "font": {
+                                                        "size": 28
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    } 
+                                ),
+                            ),
+                            dcc.RangeSlider(
+                                id='graph-metric',
+                                min=0,
+                                max=40,
+                                value=[0,0],
+                                step=None,
+                                vertical=False,
+                                disabled=True,
+                            ),
 
-        dbc.Col([
-            dbc.Card([
-                dbc.CardHeader("Map"),
-                dbc.CardBody([
-                    dl.Map(
-                        [
-                            dl.TileLayer(),
-                            dl.ScaleControl(position="bottomleft"),
-                            dl.FullScreenControl(),
-                            upt,
-                            colorbar,
-                        ],
-                        center=[-2.058210136999589, 116.78386542384145],
-                        markerZoomAnimation=True,
-                        id='dash-leaflet-map',
-                        style={'height': '60vh', 'width': '100%', 'margin-top': '20px'},
-                    ),
-                ]),
-            ]),
-        ], xs=12, md=6),
-    ]),
+                            html.Div([
+                                html.Div([
+                                    html.Label("Lowest Value", style={"font-weight": "bold"}),
+                                    html.Div(id='low-temp', style={"font-size": "20px"}, children='0')
+                                ], style={'width': '33%', 'display': 'inline-block'}),
+                                html.Div([
+                                    html.Label("Average Value", style={"font-weight": "bold"}),
+                                    html.Div(id='avg-temp', style={"font-size": "20px"}, children='0')
+                                ], style={'width': '33%', 'display': 'inline-block'}),
+                                html.Div([
+                                    html.Label("Highest Value", style={"font-weight": "bold"}),
+                                    html.Div(id='high-temp', style={"font-size": "20px"}, children='0')
+                                ], style={'width': '33%', 'display': 'inline-block'}),
+                            ]),
 
-    html.Div([
-        dbc.Card([
-            dbc.CardHeader("Other Details"),
-            dbc.CardBody([
-                dash_table.DataTable(
-                    data=data_table_lokasi.to_dict('records'),
-                    page_size=10
-                ),
+                        ]),
+                    ],
+                    style={
+                        'display': 'grid', 
+                        'grid-column': 'auto auto',
+                        'grid-auto-flow': 'column'
+                    }),
+                ],
+                style={
+                    'display': 'grid', 
+                    'grid-column': 'auto auto',
+                    'grid-auto-flow': 'row'
+                }
+            ),  # Display elements side by side
             ]),
-        ]),
-    ], style={'margin-top': '20px'}),
+        ],
+        style={
+            'display': 'grid',
+            'grid-column': 'auto auto',
+            'grid-auto-flow': 'column'
+        }),
+        html.Div([  # Div for other details such as comparison graph, data tables, and other metrics 
+            dash_table.DataTable(
+                data=data_table_lokasi.to_dict('records'), 
+                page_size=10)       
+            ],
+            style= {
+                'display': 'grid', 
+                'grid-column': 'auto auto',
+                'grid-auto-flow': 'row'
+            }
+        ),
+    ])
 ])
+
 
 
 
