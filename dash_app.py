@@ -294,6 +294,8 @@ app = Dash(__name__, external_scripts=[chroma],  external_stylesheets=external_s
 
 app.title = 'MONAS Dashboard' 
 
+# ... (Previous code)
+
 app.layout = html.Div([
     dbc.Container(
         [
@@ -319,15 +321,9 @@ app.layout = html.Div([
                     "flex-direction" : "row",
                     },
             ),
-        ]
+        ],
+        fluid=True  # Set the container to fluid
     ),
-
-    # dcc.Dropdown(id='model-list',
-    #             options=[
-    #                 {'label': i, 'value': i} for i in files
-    #             ],
-    #             multi=True
-    # ),
 
     html.Div([
         html.Div([  # Wrap the map and header in a div for layout
@@ -340,16 +336,16 @@ app.layout = html.Div([
                     colorbar,
                 ],
                 center=[-2.058210136999589, 116.78386542384145],
-                markerZoomAnimation = True,
-                id = 'dash-leaflet-map',
+                markerZoomAnimation=True,
+                id='dash-leaflet-map',
                 style={
                     'height': '90vh', 
-                    'width' : '50vw'
+                    'width': '50vw'
                     }
-                ),
+            ),
             html.Div([
                 html.Div([
-                    html.Div([ # Div for map, metric, and graph
+                    html.Div([  # Div for map, metric, and graph
                         html.Div([
                             dcc.Tabs(
                                 id="graph-tabs",
@@ -380,9 +376,9 @@ app.layout = html.Div([
                                 dcc.Graph(
                                     id='graph_per_loc',
                                     figure={
-                                        'layout' : {
+                                        'layout': {
                                             "xaxis": {
-                                            "visible": False
+                                                "visible": False
                                             },
                                             "yaxis": {
                                                 "visible": False
@@ -427,41 +423,44 @@ app.layout = html.Div([
                                 ], style={'width': '33%', 'display': 'inline-block'}),
                             ]),
 
-                            
                         ]),
-                    ], 
+                    ],
                     style={
                         'display': 'grid', 
                         'grid-column': 'auto auto',
                         'grid-auto-flow': 'column'
                     }),
-                ], 
+                ],
                 style={
                     'display': 'grid', 
                     'grid-column': 'auto auto',
                     'grid-auto-flow': 'row'
-                    }
-                ),  # Display elements side by side
+                }
+            ),  # Display elements side by side
             ]),
-        ], 
+        ],
         style={
-            'display' : 'grid',
+            'display': 'grid',
             'grid-column': 'auto auto',
             'grid-auto-flow': 'column'
-            }),
-        html.Div([# Div for other details such as comparison graph, data tables, and other metrics 
-                dash_table.DataTable(
-                    data=data_table_lokasi.to_dict('records'), 
-                    page_size=10)       
-                ], 
-                style= {
-                    'display': 'grid', 
-                    'grid-column': 'auto auto',
-                    'grid-auto-flow': 'row'
-                }
-                ),
+        }),
+        html.Div([  # Div for other details such as comparison graph, data tables, and other metrics 
+            dash_table.DataTable(
+                data=data_table_lokasi.to_dict('records'), 
+                page_size=10)       
+            ],
+            style= {
+                'display': 'grid', 
+                'grid-column': 'auto auto',
+                'grid-auto-flow': 'row'
+            }
+        ),
     ])
 ])
+
+
+
+
 
 
 
