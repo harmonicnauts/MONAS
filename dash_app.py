@@ -23,7 +23,6 @@ files = [f for f in os.listdir(pathway)]
 # Load dataframes
 df_wmoid = pd.read_excel('./Data/daftar_wmoid.xlsx') # UPT Dataframe
 ina_nwp_input = pd.read_csv('./Data/MONAS-input_nwp_compile.csv') # Feature to predict from INA-NWP
-
 df_wmoid = df_wmoid.rename(columns={'WMOID': 'lokasi'}) # WMOID dataframe preproceses
 df_wmoid = df_wmoid[['lokasi', 'Nama UPT']]
 
@@ -70,115 +69,12 @@ ina_nwp_input_filtered = ina_nwp_input_filtered.rename(
 })
 
 
-
-# Load ML Models
-# Initiate xgb
-temp_model_xgb = XGBRegressor()
-humid_model_xgb = XGBRegressor()
-
-# etr = pickle.load(open('weather_extra_trees_regressor.pkl', 'rb'))
-temp_model_xgb.load_model('./models/Temp_xgb_tuned_RMSE_1_441.json')
-humid_model_xgb.load_model('./models/xgbregressor_humidity.json')
-with open('./models/huber_regressor_bad.pkl','rb') as f:
-    prec_model = pickle.load(f)
-
-print(ina_nwp_input_filtered.columns)
-temp_pred = temp_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['lcloud...','mcloud...', 'hcloud...', 'clmix.kg.kg.', 'wamix.kg.kg.', 'prec_nwp']))
-humid_pred = humid_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['prec_nwp', 'mcloud...', 'wamix.kg.kg.', 'clmix.kg.kg.', 'lcloud...', 'hcloud...']))
-prec_pred = prec_model.predict(ina_nwp_input_filtered[[
-    'lokasi', 'suhu2m.degC.', 'dew2m.degC.', 'rh2m...', 'wspeed.m.s.',
-    'wdir.deg.', 'lcloud...', 'mcloud...', 'hcloud...', 'surpre.Pa.',
-    'clmix.kg.kg.', 'wamix.kg.kg.', 'outlr.W.m2.', 'pblh.m.', 'lifcl.m.',
-    'cape.j.kg.', 'mdbz', 't950.degC.', 'rh950...', 'ws950.m.s.',
-    'wd950.deg.', 't800.degC.', 'rh800...', 'ws800.m.s.', 'wd800.deg.',
-    't500.degC.', 'rh500...', 'ws500.m.s.', 'wd500.deg.', 'ELEV',
-    'prec_nwp'
-]])
-
-
-
-
-#OUTPUT TEMP
-df_pred_temp = pd.concat([ina_nwp_input['Date'], ina_nwp_input_filtered[['lokasi', 'suhu2m.degC.']], pd.Series(temp_pred, index = ina_nwp_input_filtered.index)], axis=1)
-df_pred_temp.columns = ['Date','lokasi', 'suhu2m.degC.', 'prediction']
-df_pred_temp = df_pred_temp.dropna()
-
-
-
-#OUTPUT HUMIDITY
-df_pred_humid = pd.concat([ina_nwp_input['Date'], ina_nwp_input_filtered[['lokasi', 'rh2m...']], pd.Series(humid_pred, index = ina_nwp_input_filtered.index)], axis=1)
-df_pred_humid.columns = ['Date','lokasi', 'rh2m...', 'prediction']
-df_pred_humid = df_pred_humid.dropna()
-
-#OUTPUT Precipitation
-df_pred_prec = pd.concat([ina_nwp_input['Date'], ina_nwp_input_filtered[['lokasi', 'prec_nwp']], pd.Series(prec_pred, index = ina_nwp_input_filtered.index)], axis=1)
-df_pred_prec.columns = ['Date','lokasi', 'prec_nwp', 'prediction']
-df_pred_prec = df_pred_prec.dropna()
-
-
-# Load script 
-temp_colorscale = [
-    'rgb(0, 10, 112)',
-    'rgb(0, 82, 190)', 
-    'rgb(51, 153, 255)', 
-    'rgb(153, 235, 255)', 
-    'rgb(204, 255, 255)',
-    'rgb(255, 255, 204)',
-    'rgb(255, 225, 132)',
-    'rgb(255, 158, 20)',
-    'rgb(245, 25, 25)',
-    'rgb(165, 0, 0)',
-    'rgb(50, 0, 0)'
-    ]
-
-humid_colorscale = [
-    'rgb(204, 102, 0)',
-    'rgb(255, 128, 0)', 
-    'rgb(255, 193, 51)', 
-    'rgb(255, 255, 102)', 
-    'rgb(255, 255, 255)',
-    'rgb(153, 255, 255)',
-    'rgb(102, 178, 255)',
-    'rgb(10, 102, 204)',
-    'rgb(10, 76, 153)',
-    'rgb(10, 51, 102)',
-    ]
-
-prec_colorscale=[
-    'rgb(6, 62, 114)',
-    'rgb(34, 112, 192)',
-    'rgb(57, 196, 234)',
-    'rgb(0, 255, 193)',
-    'rgb(0, 224, 71)',
-    'rgb(250, 255, 66)',
-    'rgb(255, 173, 13)',
-    'rgb(255, 108, 0)',
-    'rgb(179, 58, 0)',
-    'rgb(252, 38, 42)',
-    'rgb(226, 0, 34)',
-    'rgb(255, 0, 203)',
-    'rgb(201, 0, 154)',
-    'rgb(121, 0, 123)',
-]
-chroma = "https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.1.0/chroma.min.js"  # js lib used for colors
-
-
-
-# Min and Max temp for point colors
-temp_min = 0
-temp_max = 38
-
-humid_min = 0
-humid_max = 100
-
-prec_min = 0
-prec_max = 60
-
-colorbar = dl.Colorbar(id = 'map-colorbar',colorscale=temp_colorscale, width=20, height=150, min=temp_min, max=temp_max, unit='°C')
-# humid_colorbar = dl.Colorbar(colorscale=humid_colorscale, width=20, height=150, min=humid_min, max=humid_max, unit='%')
-
-BMKG_LOGO = "https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"
-
+def predict_xgb(model_path, columns_to_drop, input_df):
+    model = XGBRegressor()
+    model.load_model(model_path)
+    input_data = input_df.drop(columns=columns_to_drop)
+    predictions = model.predict(input_data)
+    return predictions
 
 
 # Function for adding some properties to all the points in Leaflet Map
@@ -403,6 +299,111 @@ def upt_click(feature, tabs_value):
                 )
 
 
+def generate_output_df(variable_name, original_df, filtered_df, prediction_array):
+    df_pred = pd.concat([original_df['Date'], filtered_df[['lokasi', variable_name]], pd.Series(prediction_array, index=filtered_df.index)], axis=1)
+    df_pred.columns = ['Date', 'lokasi', variable_name, 'prediction']
+    df_pred = df_pred.dropna()
+    return df_pred
+
+
+# Load ML Models
+with open('./models/huber_regressor_bad.pkl','rb') as f:
+    prec_model = pickle.load(f)
+
+# Predict temperature
+temp_model_path = './models/Temp_xgb_tuned_RMSE_1_441.json'
+temp_columns_to_drop = ['lcloud...', 'mcloud...', 'hcloud...', 'clmix.kg.kg.', 'wamix.kg.kg.', 'prec_nwp']
+temp_pred = predict_xgb(temp_model_path, temp_columns_to_drop, ina_nwp_input_filtered)
+
+# Predict humidity
+humid_model_path = './models/xgbregressor_humidity.json'
+humid_columns_to_drop = ['prec_nwp', 'mcloud...', 'wamix.kg.kg.', 'clmix.kg.kg.', 'lcloud...', 'hcloud...']
+humid_pred = predict_xgb(humid_model_path, humid_columns_to_drop, ina_nwp_input_filtered)
+
+# Predict precipitation
+prec_pred = prec_model.predict(ina_nwp_input_filtered[[
+    'lokasi', 'suhu2m.degC.', 'dew2m.degC.', 'rh2m...', 'wspeed.m.s.',
+    'wdir.deg.', 'lcloud...', 'mcloud...', 'hcloud...', 'surpre.Pa.',
+    'clmix.kg.kg.', 'wamix.kg.kg.', 'outlr.W.m2.', 'pblh.m.', 'lifcl.m.',
+    'cape.j.kg.', 'mdbz', 't950.degC.', 'rh950...', 'ws950.m.s.',
+    'wd950.deg.', 't800.degC.', 'rh800...', 'ws800.m.s.', 'wd800.deg.',
+    't500.degC.', 'rh500...', 'ws500.m.s.', 'wd500.deg.', 'ELEV',
+    'prec_nwp'
+]])
+
+
+# OUTPUT temperature
+df_pred_temp = generate_output_df('suhu2m.degC.', ina_nwp_input, ina_nwp_input_filtered, temp_pred)
+
+# OUTPUT humidity
+df_pred_humid = generate_output_df('rh2m...', ina_nwp_input, ina_nwp_input_filtered, humid_pred)
+
+# OUTPUT precipitation
+df_pred_prec = generate_output_df('prec_nwp', ina_nwp_input, ina_nwp_input_filtered, prec_pred)
+
+
+# Load script 
+temp_colorscale = [
+    'rgb(0, 10, 112)',
+    'rgb(0, 82, 190)', 
+    'rgb(51, 153, 255)', 
+    'rgb(153, 235, 255)', 
+    'rgb(204, 255, 255)',
+    'rgb(255, 255, 204)',
+    'rgb(255, 225, 132)',
+    'rgb(255, 158, 20)',
+    'rgb(245, 25, 25)',
+    'rgb(165, 0, 0)',
+    'rgb(50, 0, 0)'
+    ]
+
+humid_colorscale = [
+    'rgb(204, 102, 0)',
+    'rgb(255, 128, 0)', 
+    'rgb(255, 193, 51)', 
+    'rgb(255, 255, 102)', 
+    'rgb(255, 255, 255)',
+    'rgb(153, 255, 255)',
+    'rgb(102, 178, 255)',
+    'rgb(10, 102, 204)',
+    'rgb(10, 76, 153)',
+    'rgb(10, 51, 102)',
+    ]
+
+prec_colorscale=[
+    'rgb(6, 62, 114)',
+    'rgb(34, 112, 192)',
+    'rgb(57, 196, 234)',
+    'rgb(0, 255, 193)',
+    'rgb(0, 224, 71)',
+    'rgb(250, 255, 66)',
+    'rgb(255, 173, 13)',
+    'rgb(255, 108, 0)',
+    'rgb(179, 58, 0)',
+    'rgb(252, 38, 42)',
+    'rgb(226, 0, 34)',
+    'rgb(255, 0, 203)',
+    'rgb(201, 0, 154)',
+    'rgb(121, 0, 123)',
+]
+chroma = "https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.1.0/chroma.min.js"  # js lib used for colors
+
+
+
+# Min and Max temp for point colors
+temp_min = 0
+temp_max = 38
+
+humid_min = 0
+humid_max = 100
+
+prec_min = 0
+prec_max = 60
+
+colorbar = dl.Colorbar(id = 'map-colorbar',colorscale=temp_colorscale, width=20, height=150, min=temp_min, max=temp_max, unit='°C')
+# humid_colorbar = dl.Colorbar(colorscale=humid_colorscale, width=20, height=150, min=humid_min, max=humid_max, unit='%')
+
+BMKG_LOGO = "https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"
 
 
 # Example usage with 'lokasi' as the merging column
