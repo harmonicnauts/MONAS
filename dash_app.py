@@ -412,7 +412,7 @@ data_table_lokasi_humid = create_data_table(df_wmoid, df_pred_humid, 'humidity',
 data_table_lokasi_prec = create_data_table(df_wmoid, df_pred_prec, 'precipitation', merge_column='lokasi')
 
 # Merge the dataframes
-data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid, on='lokasi').merge(data_table_lokasi_prec, on='lokasi')
+data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid.drop(columns=['Nama UPT']), on='lokasi').merge(data_table_lokasi_prec.drop(columns=['Nama UPT']), on='lokasi')
 print('data_table_lokasi')
 print(data_table_lokasi)
 
@@ -508,8 +508,8 @@ app.layout = html.Div([
                 markerZoomAnimation = True,
                 id = 'dash-leaflet-map',
                 style={
-                    'height': '90vh', 
-                    'width' : '50vw'
+                    'height': '600px', 
+                    'width' : '750px'
                     }
                 ),
             html.Div([
@@ -621,6 +621,7 @@ app.layout = html.Div([
                 ], 
                 style= {
                     'display': 'grid', 
+                    'margin' : '10px',
                     'grid-column': 'auto auto',
                     'grid-auto-flow': 'row'
                 }
