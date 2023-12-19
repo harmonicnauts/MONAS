@@ -220,35 +220,200 @@ point_to_layer = assign(
     }
     """)
 
+def create_data_table(df_wmoid, df_pred, col_name, merge_column='lokasi'):
+    grouped_data = df_pred.groupby(merge_column)['prediction'].agg(['max', 'mean', 'min']).astype('float64').round(1)
+    data_table_lokasi = df_wmoid.merge(grouped_data, left_on=merge_column, right_index=True)
+    
+    column_mapping = {
+        'mean': f'average {col_name}',
+        'max': f'max {col_name}',
+        'min': f'min {col_name}'
+    }
+    
+    data_table_lokasi = data_table_lokasi.rename(columns=column_mapping)
+    
+    return data_table_lokasi
+
+
+def plot_graph(df_graph, upt_name, nwp_output, graph_type):
+    if graph_type in ['Temperature', 'Humidity'] : 
+        figure = px.line(
+                df_graph, 
+                x='Date', 
+                y='prediction', 
+                title=f'{graph_type} in UPT {upt_name} (UTF)', 
+                markers=True, 
+                line_shape='spline'
+                )
+        
+        figure.add_scatter(
+                x=df_graph['Date'], 
+                y=df_graph[nwp_output], 
+                mode='lines', 
+                name=f'Output {graph_type} 2m INA-NWP',
+                line_shape='spline'
+                )
+        
+        figure.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1,
+                )
+            )
+        
+        return figure
+    elif graph_type in ['Precipitation']:
+        figure = px.bar(
+                df_graph, 
+                x='Date', 
+                y=['prediction', 'prec_nwp'], 
+                title=f'{graph_type} in UPT {upt_name} (UTF)', 
+                )
+        return figure
 
 
 
-# Make dataframe for showing min, max, avg temperature
-grouped_temp = df_pred_temp.groupby('lokasi')['prediction'].agg(['max', 'mean', 'min']).astype('float64').round(1)
-data_table_lokasi_temp = df_wmoid.merge(grouped_temp, left_on='lokasi', right_index=True)
-data_table_lokasi_temp = data_table_lokasi_temp.rename(columns={'mean': 'average temp', 'max': 'max temp', 'min': 'min temp'})
+def get_datatable(wmoid_lokasi, prop_lokasi, column):
+    return data_table_lokasi[wmoid_lokasi == prop_lokasi][column].iloc[0]
 
 
 
-# Make dataframe for showing min, max, avg humidity
-grouped_humid = df_pred_humid.groupby('lokasi')['prediction'].agg(['max', 'mean', 'min']).astype('float64').round(1)
-data_table_lokasi_humid = df_wmoid.merge(grouped_humid, left_on='lokasi', right_index=True)
-data_table_lokasi_humid = data_table_lokasi_humid.rename(columns={'mean': 'average humidity', 'max': 'max humidity', 'min': 'min humidity'})
+# Callback function for changing 
+@callback(
+        Output("graph-metric", "value"), # RangeSlider value
+        Output("graph-metric", "min"), # RangeSlider minimum value
+        Output("graph-metric", "max"), # RangeSlider maximum value
+        Output("graph_per_loc", "figure"), # Graph Figure
 
-# Merge the dataframe
-data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid[['lokasi', 'max humidity', 'average humidity', 'min humidity']], on='lokasi')
-print('datatable')
+        Output("geojson", "hideout"), # Hideout property for dash leaflet GeoJSON'
+
+        Output("map-colorbar", "colorscale"), # colorbar's colorscale
+        Output("map-colorbar", "min"), # colorbar's minimum value
+        Output("map-colorbar", "max"), # colorbar's maximum value
+        Output("map-colorbar", "unit"), # colorbar's unit
+
+        Output("low-temp", "children"), #
+        Output("avg-temp", "children"),
+        Output("high-temp", "children"),
+
+        Input ("geojson", "clickData"), # Marker OnClick Event
+        Input ("graph-tabs", "value"), # Value of currently selected tab
+        prevent_initial_call=True
+        )
+def upt_click(feature, tabs_value):
+    print(feature)    
+    if feature is not None:
+        wmoid_lokasi = data_table_lokasi['lokasi']
+        prop_lokasi = feature['properties']['lokasi']
+        nama_upt = data_table_lokasi[wmoid_lokasi == prop_lokasi]['Nama UPT'].values[0]
+
+        # Column to display on plots
+        temp_features_to_display = ['Date', 'suhu2m.degC.', 'prediction', 'lokasi']
+        humid_features_to_display = ['Date', 'rh2m...', 'prediction', 'lokasi']
+        prec_features_to_display = ['Date', 'prec_nwp', 'prediction', 'lokasi']
+
+        # Sliced Dataframe filtered to only one location
+        dff_one_loc_temp = df_pred_temp[df_pred_temp['lokasi'] == prop_lokasi][temp_features_to_display]
+        dff_one_loc_humidity = df_pred_humid[df_pred_humid['lokasi'] == prop_lokasi][humid_features_to_display]
+        dff_one_loc_prec = df_pred_prec[df_pred_prec['lokasi'] == prop_lokasi][prec_features_to_display]
+        
+
+        print('graph_mode', tabs_value)
+
+
+        if tabs_value == 'temp-tab':
+            # Plotly Express Figure for  Temperature
+            type = 'Temperature'
+            figure = plot_graph(dff_one_loc_temp, nama_upt, 'suhu2m.degC.', type)
+
+            # Min - Max Value for Inactive Temperature Slider
+            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min temp')
+            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'average temp')
+            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max temp')
+
+            unit = '°C'
+
+            # Hideout dict
+            color_prop = 'average temp'
+            min_abs = temp_min
+            max_abs = temp_max
+            colorscale = temp_colorscale
 
 
 
-# Make dataframe for showing min, max, avg precipitation
-grouped_prec = df_pred_prec.groupby('lokasi')['prediction'].agg(['max', 'mean', 'min']).astype('float64').round(1)
-data_table_lokasi_prec = df_wmoid.merge(grouped_prec, left_on='lokasi', right_index=True)
-data_table_lokasi_prec = data_table_lokasi_prec.rename(columns={'mean': 'average precipitation', 'max': 'max precipitation', 'min': 'min precipitation'})
+        elif tabs_value == 'humid-tab':
+            # Plotly Express Figure for  Humidity
+            type = 'Humidity'
+            figure = plot_graph(dff_one_loc_humidity, nama_upt, 'rh2m...', type)
+            
+            # Min - Max Value for Inactive Humidity Slider
+            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min humidity')
+            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'average humidity')
+            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max humidity')
 
-# Merge the dataframe
-data_table_lokasi = data_table_lokasi.merge(data_table_lokasi_prec[['lokasi', 'max precipitation', 'average precipitation', 'min precipitation']], on='lokasi')
-print('datatable')
+            unit = '%'
+
+            # Hideout dict
+            color_prop = 'average humidity'
+            min_abs = humid_min
+            max_abs = humid_max
+            colorscale = humid_colorscale
+            
+        
+        elif tabs_value == 'prec-tab':
+            # Plotly Express Figure for Precipitation
+            type = 'Precipitation'
+            figure = plot_graph(dff_one_loc_prec, nama_upt, 'prec_nwp', type)
+
+            unit = 'mm'
+            
+            # Min - Max Value for Inactive Precipitation Slider
+            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min precipitation')
+            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'average precipitation')
+            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max precipitation')
+            
+
+            # Hideout dict
+            color_prop = 'average precipitation'
+            min_abs = prec_min
+            max_abs = prec_max
+            colorscale = prec_colorscale
+
+        # Combining the value to one array
+        slider_value = [min, max]
+        hideout = dict(
+                colorProp = color_prop,
+                circleOptions=dict(
+                    fillOpacity=1, 
+                    stroke=False, 
+                    radius=5
+                    ),   
+                min = min_abs,
+                max = max_abs,
+                colorscale = colorscale
+            )
+
+        return (slider_value, min_abs, max_abs, figure, 
+                hideout, 
+                colorscale, min_abs, max_abs, unit,
+                min, avg, max
+                )
+
+
+
+
+# Example usage with 'lokasi' as the merging column
+data_table_lokasi_temp = create_data_table(df_wmoid, df_pred_temp, 'temp', merge_column='lokasi')
+data_table_lokasi_humid = create_data_table(df_wmoid, df_pred_humid, 'humidity', merge_column='lokasi')
+data_table_lokasi_prec = create_data_table(df_wmoid, df_pred_prec, 'precipitation', merge_column='lokasi')
+
+# Merge the dataframes
+data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid, on='lokasi').merge(data_table_lokasi_prec, on='lokasi')
+print('data_table_lokasi')
+print(data_table_lokasi)
 
 
 # Make geopandas geometry for coordinates
@@ -463,173 +628,6 @@ app.layout = html.Div([
 ])
 
 
-
-def plot_graph(df_graph, upt_name, nwp_output, graph_type):
-    if graph_type in ['Temperature', 'Humidity'] : 
-        figure = px.line(
-                df_graph, 
-                x='Date', 
-                y='prediction', 
-                title=f'{graph_type} in UPT {upt_name} (UTF)', 
-                markers=True, 
-                line_shape='spline'
-                )
-        
-        figure.add_scatter(
-                x=df_graph['Date'], 
-                y=df_graph[nwp_output], 
-                mode='lines', 
-                name=f'Output {graph_type} 2m INA-NWP',
-                line_shape='spline'
-                )
-        
-        figure.update_layout(
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1,
-                )
-            )
-        
-        return figure
-    elif graph_type in ['Precipitation']:
-        figure = px.bar(
-                df_graph, 
-                x='Date', 
-                y=['prediction', 'prec_nwp'], 
-                title=f'{graph_type} in UPT {upt_name} (UTF)', 
-                )
-        return figure
-
-
-
-def get_datatable(wmoid_lokasi, prop_lokasi, column):
-    return data_table_lokasi[wmoid_lokasi == prop_lokasi][column].iloc[0]
-
-
-
-# Callback function for changing 
-@callback(
-        Output("graph-metric", "value"), # RangeSlider value
-        Output("graph-metric", "min"), # RangeSlider minimum value
-        Output("graph-metric", "max"), # RangeSlider maximum value
-        Output("graph_per_loc", "figure"), # Graph Figure
-
-        Output("geojson", "hideout"), # Hideout property for dash leaflet GeoJSON'
-
-        Output("map-colorbar", "colorscale"), # colorbar's colorscale
-        Output("map-colorbar", "min"), # colorbar's minimum value
-        Output("map-colorbar", "max"), # colorbar's maximum value
-        Output("map-colorbar", "unit"), # colorbar's unit
-
-        Output("low-temp", "children"), #
-        Output("avg-temp", "children"),
-        Output("high-temp", "children"),
-
-        Input ("geojson", "clickData"), # Marker OnClick Event
-        Input ("graph-tabs", "value"), # Value of currently selected tab
-        prevent_initial_call=True
-        )
-def upt_click(feature, tabs_value):
-    print(feature)    
-    if feature is not None:
-        wmoid_lokasi = data_table_lokasi['lokasi']
-        prop_lokasi = feature['properties']['lokasi']
-        nama_upt = data_table_lokasi[wmoid_lokasi == prop_lokasi]['Nama UPT'].values[0]
-
-        # Column to display on plots
-        temp_features_to_display = ['Date', 'suhu2m.degC.', 'prediction', 'lokasi']
-        humid_features_to_display = ['Date', 'rh2m...', 'prediction', 'lokasi']
-        prec_features_to_display = ['Date', 'prec_nwp', 'prediction', 'lokasi']
-
-        # Sliced Dataframe filtered to only one location
-        dff_one_loc_temp = df_pred_temp[df_pred_temp['lokasi'] == prop_lokasi][temp_features_to_display]
-        dff_one_loc_humidity = df_pred_humid[df_pred_humid['lokasi'] == prop_lokasi][humid_features_to_display]
-        dff_one_loc_prec = df_pred_prec[df_pred_prec['lokasi'] == prop_lokasi][prec_features_to_display]
-        
-
-        print('graph_mode', tabs_value)
-
-
-        if tabs_value == 'temp-tab':
-            # Plotly Express Figure for  Temperature
-            type = 'Temperature'
-            figure = plot_graph(dff_one_loc_temp, nama_upt, 'suhu2m.degC.', type)
-
-            # Min - Max Value for Inactive Temperature Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min temp')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'average temp')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max temp')
-
-            unit = '°C'
-
-            # Hideout dict
-            color_prop = 'average temp'
-            min_abs = temp_min
-            max_abs = temp_max
-            colorscale = temp_colorscale
-
-
-
-        elif tabs_value == 'humid-tab':
-            # Plotly Express Figure for  Humidity
-            type = 'Humidity'
-            figure = plot_graph(dff_one_loc_humidity, nama_upt, 'rh2m...', type)
-            
-            # Min - Max Value for Inactive Humidity Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min humidity')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'average humidity')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max humidity')
-
-            unit = '%'
-
-            # Hideout dict
-            color_prop = 'average humidity'
-            min_abs = humid_min
-            max_abs = humid_max
-            colorscale = humid_colorscale
-            
-        
-        elif tabs_value == 'prec-tab':
-            # Plotly Express Figure for Precipitation
-            type = 'Precipitation'
-            figure = plot_graph(dff_one_loc_prec, nama_upt, 'prec_nwp', type)
-
-            unit = 'mm'
-            
-            # Min - Max Value for Inactive Precipitation Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min precipitation')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'average precipitation')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max precipitation')
-            
-
-            # Hideout dict
-            color_prop = 'average precipitation'
-            min_abs = prec_min
-            max_abs = prec_max
-            colorscale = prec_colorscale
-
-        # Combining the value to one array
-        slider_value = [min, max]
-        hideout = dict(
-                colorProp = color_prop,
-                circleOptions=dict(
-                    fillOpacity=1, 
-                    stroke=False, 
-                    radius=5
-                    ),   
-                min = min_abs,
-                max = max_abs,
-                colorscale = colorscale
-            )
-
-        return (slider_value, min_abs, max_abs, figure, 
-                hideout, 
-                colorscale, min_abs, max_abs, unit,
-                min, avg, max
-                )
 
 if __name__ == '__main__':
     # app.run_server(host= '0.0.0.0',debug=False)
