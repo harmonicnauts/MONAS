@@ -10,18 +10,13 @@ import dash_bootstrap_components as dbc
 from dash_extensions.javascript import assign
 from xgboost import XGBRegressor
 import pickle
-import joblib
+# import joblib
 import os
 
 # List of models
 pathway = './models'
 
 files = [f for f in os.listdir(pathway)]
-
-
-# Initiate xgb
-temp_model_xgb = XGBRegressor()
-humid_model_xgb = XGBRegressor()
 
 
 
@@ -77,14 +72,18 @@ ina_nwp_input_filtered = ina_nwp_input_filtered.rename(
 
 
 # Load ML Models
+# Initiate xgb
+temp_model_xgb = XGBRegressor()
+humid_model_xgb = XGBRegressor()
+
 # etr = pickle.load(open('weather_extra_trees_regressor.pkl', 'rb'))
-temp_model_xgb.load_model('./models/Temp_xgb_tuned_R2_77.json')
+temp_model_xgb.load_model('./models/Temp_xgb_tuned_RMSE_1_441.json')
 humid_model_xgb.load_model('./models/xgbregressor_humidity.json')
 with open('./models/huber_regressor_bad.pkl','rb') as f:
     prec_model = pickle.load(f)
 
 print(ina_nwp_input_filtered.columns)
-temp_pred = temp_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['lokasi', 'lcloud...','mcloud...', 'hcloud...', 'clmix.kg.kg.', 'wamix.kg.kg.', 'prec_nwp']))
+temp_pred = temp_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['lcloud...','mcloud...', 'hcloud...', 'clmix.kg.kg.', 'wamix.kg.kg.', 'prec_nwp']))
 humid_pred = humid_model_xgb.predict(ina_nwp_input_filtered.drop(columns=['prec_nwp', 'mcloud...', 'wamix.kg.kg.', 'clmix.kg.kg.', 'lcloud...', 'hcloud...']))
 prec_pred = prec_model.predict(ina_nwp_input_filtered[[
     'lokasi', 'suhu2m.degC.', 'dew2m.degC.', 'rh2m...', 'wspeed.m.s.',
@@ -525,7 +524,7 @@ def get_datatable(wmoid_lokasi, prop_lokasi, column):
         Output("map-colorbar", "max"), # colorbar's maximum value
         Output("map-colorbar", "unit"), # colorbar's unit
 
-        Output("low-temp", "children"),
+        Output("low-temp", "children"), #
         Output("avg-temp", "children"),
         Output("high-temp", "children"),
 
@@ -633,5 +632,5 @@ def upt_click(feature, tabs_value):
                 )
 
 if __name__ == '__main__':
-    app.run_server(host= '0.0.0.0',debug=False)
-    # app.run_server(host= '127.0.0.1',debug=True)
+    # app.run_server(host= '0.0.0.0',debug=False)
+    app.run_server(host= '127.0.0.1',debug=True)
