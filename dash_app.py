@@ -86,16 +86,50 @@ on_each_feature = assign(
                     style='
                     border: 1px solid black;
                     border-radius: 5px;
-                    font-size: 15px;
+                    font-size: 13.5px;
                     padding : 3px;'
                     >
                     <img style = 'width : 20px' src="https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"/>
                     <strong>${feature['properties']['Nama UPT']}</strong><br>
                     <p>Kode: ${feature['properties']['lokasi']}</p>
                     <p>Koord: (${feature['properties']['LAT']}, ${feature['properties']['LON']})</p>
-                    <p>Temperature : <span style = 'color: red'; >${feature['properties']['mean_temp 0']}</span> C</p>
-                    <p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['mean_humidity 0']}</span>%</p>
-                    <p>Precipitation : <span style = 'color: purple';>${feature['properties']['mean_precipitation 0']}</span>mm.</p>
+                    <!--<p>Temperature : <span style = 'color: red'; >${feature['properties']['mean_temp 0']}</span> C</p>-->
+                    <!--<p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['mean_humidity 0']}</span>%</p>-->
+                    <!--<p>Precipitation : <span style = 'color: purple';>${feature['properties']['mean_precipitation 0']}</span>mm.</p>-->
+                    <table>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Today</th>
+                                <th>1 Day Forecast</th>
+                                <th>2 Day Forecast</th>
+                                <th>3 Day Forecast</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Temperature</td>
+                                <td>${feature['properties']['mean_temp 0']}</td>
+                                <td>${feature['properties']['mean_temp 1']}</td>
+                                <td>${feature['properties']['mean_temp 2']}</td>
+                                <td>${feature['properties']['mean_temp 3']}</td>
+                            </tr>
+                            <tr>
+                                <td>Humidity</td>
+                                <td>${feature['properties']['mean_humidity 0']}</td>
+                                <td>${feature['properties']['mean_humidity 1']}</td>
+                                <td>${feature['properties']['mean_humidity 2']}</td>
+                                <td>${feature['properties']['mean_humidity 3']}</td>
+                            </tr>
+                            <tr>
+                                <td>Precipitation</td>
+                                <td>${feature['properties']['mean_precipitation 0']}</td>
+                                <td>${feature['properties']['mean_precipitation 1']}</td>
+                                <td>${feature['properties']['mean_precipitation 2']}</td>
+                                <td>${feature['properties']['mean_precipitation 3']}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
                 `;
             layer.bindTooltip(tooltipContent, { sticky: true });
@@ -131,6 +165,9 @@ def create_data_table(df_wmoid, df_pred, col_name, merge_column='lokasi'):
     
     # Flatten the multi-index columns
     grouped_data.columns = [f'{agg}_{col_name} {i % 4}' for i, (agg, day) in enumerate(grouped_data.columns)]
+
+    print('grouped_data')
+    print(grouped_data)
     
     # Merge with df_wmoid
     data_table_lokasi = df_wmoid.merge(grouped_data, left_on=merge_column, right_index=True)
@@ -526,22 +563,22 @@ app.layout = html.Div([
                     markerZoomAnimation = True,
                     id = 'dash-leaflet-map',
                     style={
-                        'height': '450px', 
-                        'width' : '750px',
+                        'height': '80vh', 
+                        'width' : '1000px',
                         'margin' : '4px',
                         }
                     ),
                 html.Div([
                     html.Div([
-                        html.Label("Lowest Value", style={"font-weight": "bold"}),
+                        html.Label("Today's Min Value", style={"font-weight": "bold"}),
                         html.Div(id='low-temp', style={"font-size": "20px"}, children='0')
                     ], style={'width': '33%', 'display': 'inline-block'}),
                     html.Div([
-                        html.Label("Average Value", style={"font-weight": "bold"}),
+                        html.Label("Today's Average Value", style={"font-weight": "bold"}),
                         html.Div(id='avg-temp', style={"font-size": "20px"}, children='0')
                     ], style={'width': '33%', 'display': 'inline-block'}),
                     html.Div([
-                        html.Label("Highest Value", style={"font-weight": "bold"}),
+                        html.Label("Today's Max Value", style={"font-weight": "bold"}),
                         html.Div(id='high-temp', style={"font-size": "20px"}, children='0')
                     ], style={'width': '33%', 'display': 'inline-block'}),
                 ],style={}),
@@ -601,7 +638,10 @@ app.layout = html.Div([
                                     }
                                 ]
                             }
-                        } 
+                        },
+                        style={
+                        'height': '80vh',
+                        }
                     ),
                 )], 
                 style={
@@ -615,18 +655,18 @@ app.layout = html.Div([
                 'grid-column': 'auto auto',
                 'grid-auto-flow': 'column'
         }),
-        html.Div([# Div for other details such as comparison graph, data tables, and other metrics 
-            dash_table.DataTable(
-                data=data_table_lokasi.to_dict('records'), 
-                page_size=10)       
-            ], 
-            style= {
-                'display': 'grid', 
-                'margin' : '10px',
-                'grid-column': 'auto auto',
-                'grid-auto-flow': 'row'
-            }
-        ),
+        # html.Div([# Div for other details such as comparison graph, data tables, and other metrics 
+        #     dash_table.DataTable(
+        #         data=data_table_lokasi.to_dict('records'), 
+        #         page_size=10)       
+        #     ], 
+        #     style= {
+        #         'display': 'grid', 
+        #         'margin' : '10px',
+        #         'grid-column': 'auto auto',
+        #         'grid-auto-flow': 'row'
+        #     }
+        # ),
     ])
 ])
 
