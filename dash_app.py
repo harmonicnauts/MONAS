@@ -82,21 +82,21 @@ on_each_feature = assign(
     """function(feature, layer, context){
         if(feature.properties.lokasi){
             var tooltipContent = `
-            <div 
-                style='
-                border: 1px solid black;
-                border-radius: 5px;
-                font-size: 15px;
-                padding : 3px;'
-                >
-                <img style = 'width : 20px' src="https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"/>
-                <strong>${feature['properties']['Nama UPT']}</strong><br>
-                <p>Kode: ${feature['properties']['lokasi']}</p>
-                <p>Koord: (${feature['properties']['LAT']}, ${feature['properties']['LON']})</p>
-                <p>Temperature : <span style = 'color: red'; >${feature['properties']['mean_temp 0']}</span> C</p>
-                <p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['mean_humidity 0']}</span>%</p>
-                <p>Precipitation : <span style = 'color: purple';>${feature['properties']['mean_precipitation 0']}</span>mm.</p>
-            </div>
+                <div 
+                    style='
+                    border: 1px solid black;
+                    border-radius: 5px;
+                    font-size: 15px;
+                    padding : 3px;'
+                    >
+                    <img style = 'width : 20px' src="https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png"/>
+                    <strong>${feature['properties']['Nama UPT']}</strong><br>
+                    <p>Kode: ${feature['properties']['lokasi']}</p>
+                    <p>Koord: (${feature['properties']['LAT']}, ${feature['properties']['LON']})</p>
+                    <p>Temperature : <span style = 'color: red'; >${feature['properties']['mean_temp 0']}</span> C</p>
+                    <p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['mean_humidity 0']}</span>%</p>
+                    <p>Precipitation : <span style = 'color: purple';>${feature['properties']['mean_precipitation 0']}</span>mm.</p>
+                </div>
                 `;
             layer.bindTooltip(tooltipContent, { sticky: true });
         }
@@ -198,9 +198,8 @@ def get_datatable(wmoid_lokasi, prop_lokasi, column):
         Output("map-colorbar", "max"), # colorbar's maximum value
         Output("map-colorbar", "unit"), # colorbar's unit
 
-        Output("low-temp", "children"), #
-        Output("avg-temp", "children"),
-        Output("high-temp", "children"),
+        Output("low-temp", "children"), Output("avg-temp", "children"), Output("high-temp", "children"),
+        Output("temp-tab", "disabled"), Output("humid-tab", "disabled"), Output("prec-tab", "disabled"),
 
         Input ("geojson", "clickData"), # Marker OnClick Event
         Input ("graph-tabs", "value"), # Value of currently selected tab
@@ -302,7 +301,8 @@ def upt_click(feature, tabs_value):
         return (slider_value, min_abs, max_abs, figure, 
                 hideout, 
                 colorscale, min_abs, max_abs, unit,
-                min, avg, max
+                min, avg, max,
+                False, False, False
                 )
 
 
@@ -428,7 +428,7 @@ print(data_table_lokasi.columns)
 # Make geopandas geometry for coordinates
 geometry = geopandas.points_from_xy(df_map.LON, df_map.LAT)
 upt_gpd = geopandas.GeoDataFrame(df_map, geometry=geometry)
-upt_gpd = pd.merge(upt_gpd, data_table_lokasi[['lokasi', 'mean_temp 0', 'mean_humidity 0', 'mean_precipitation 0']], on='lokasi')
+upt_gpd = pd.merge(upt_gpd, data_table_lokasi[data_table_lokasi.drop(columns=['Nama UPT']).columns], on='lokasi')
 upt_gpd = upt_gpd.reset_index(drop=True)
 
 geojson = json.loads(upt_gpd.to_json())
@@ -555,18 +555,24 @@ app.layout = html.Div([
                     children=[
                         dcc.Tab(
                             label='Temperature',
+                            id='temp-tab',
+                            disabled=True,
                             value='temp-tab',
                             className='custom-tab',
                             selected_className='custom-tab--selected'
                         ),
                         dcc.Tab(
                             label='Humidity',
+                            id='humid-tab',
+                            disabled=True,
                             value='humid-tab',
                             className='custom-tab',
                             selected_className='custom-tab--selected'
                         ),
                         dcc.Tab(
                             label='Precipitation',
+                            id='prec-tab',
+                            disabled=True,
                             value='prec-tab',
                             className='custom-tab',
                             selected_className='custom-tab--selected'
@@ -627,5 +633,5 @@ app.layout = html.Div([
 
 
 if __name__ == '__main__':
-    # app.run_server(host= '0.0.0.0',debug=False)
-    app.run_server(host= '127.0.0.1',debug=True)
+    app.run_server(host= '0.0.0.0',debug=False)
+    # app.run_server(host= '127.0.0.1',debug=True)
