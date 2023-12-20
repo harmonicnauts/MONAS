@@ -14,9 +14,9 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 <strong>${feature['properties']['Nama UPT']}</strong><br>
                 <p>Kode: ${feature['properties']['lokasi']}</p>
                 <p>Koord: (${feature['properties']['LAT']}, ${feature['properties']['LON']})</p>
-                <p>Temperature : <span style = 'color: red'; >${feature['properties']['average temp']}</span> C</p>
-                <p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['average humidity']}</span>%</p>
-                <p>Precipitation : <span style = 'color: purple';>${feature['properties']['average precipitation']}</span>mm.</p>
+                <p>Temperature : <span style = 'color: red'; >${feature['properties']['mean_temp 0']}</span> C</p>
+                <p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['mean_humidity 0']}</span>%</p>
+                <p>Precipitation : <span style = 'color: purple';>${feature['properties']['mean_precipitation 0']}</span>mm.</p>
             </div>
                 `;
                     layer.bindTooltip(tooltipContent, {

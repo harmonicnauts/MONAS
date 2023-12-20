@@ -93,9 +93,9 @@ on_each_feature = assign(
                 <strong>${feature['properties']['Nama UPT']}</strong><br>
                 <p>Kode: ${feature['properties']['lokasi']}</p>
                 <p>Koord: (${feature['properties']['LAT']}, ${feature['properties']['LON']})</p>
-                <p>Temperature : <span style = 'color: red'; >${feature['properties']['average temp']}</span> C</p>
-                <p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['average humidity']}</span>%</p>
-                <p>Precipitation : <span style = 'color: purple';>${feature['properties']['average precipitation']}</span>mm.</p>
+                <p>Temperature : <span style = 'color: red'; >${feature['properties']['mean_temp 0']}</span> C</p>
+                <p>Relative Humidity : <span style = 'color: blue'; >${feature['properties']['mean_humidity 0']}</span>%</p>
+                <p>Precipitation : <span style = 'color: purple';>${feature['properties']['mean_precipitation 0']}</span>mm.</p>
             </div>
                 `;
             layer.bindTooltip(tooltipContent, { sticky: true });
@@ -117,16 +117,23 @@ point_to_layer = assign(
     """)
 
 def create_data_table(df_wmoid, df_pred, col_name, merge_column='lokasi'):
-    grouped_data = df_pred.groupby(merge_column)['prediction'].agg(['max', 'mean', 'min']).astype('float64').round(1)
+    # Convert datetime64 column to datetime if not already
+    df_pred['Date'] = pd.to_datetime(df_pred['Date'])
+    
+    # Extract day from datetime
+    df_pred['day'] = df_pred['Date'].dt.day
+    
+    # Group by both merge_column and day
+    grouped_data = df_pred.groupby([merge_column, 'day'])['prediction'].agg(['max', 'mean', 'min']).astype('float64').round(1)
+    
+    # Pivot the table to have days as columns
+    grouped_data = grouped_data.pivot_table(index=merge_column, columns='day', values=['max', 'mean', 'min'], aggfunc='first')
+    
+    # Flatten the multi-index columns
+    grouped_data.columns = [f'{agg}_{col_name} {i % 4}' for i, (agg, day) in enumerate(grouped_data.columns)]
+    
+    # Merge with df_wmoid
     data_table_lokasi = df_wmoid.merge(grouped_data, left_on=merge_column, right_index=True)
-    
-    column_mapping = {
-        'mean': f'average {col_name}',
-        'max': f'max {col_name}',
-        'min': f'min {col_name}'
-    }
-    
-    data_table_lokasi = data_table_lokasi.rename(columns=column_mapping)
     
     return data_table_lokasi
 
@@ -226,14 +233,14 @@ def upt_click(feature, tabs_value):
             figure = plot_graph(dff_one_loc_temp, nama_upt, 'suhu2m.degC.', type)
 
             # Min - Max Value for Inactive Temperature Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min temp')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'average temp')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max temp')
+            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_temp 0')
+            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_temp 0')
+            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_temp 0')
 
             unit = '°C'
 
             # Hideout dict
-            color_prop = 'average temp'
+            color_prop = 'mean_temp 0'
             min_abs = temp_min
             max_abs = temp_max
             colorscale = temp_colorscale
@@ -246,14 +253,14 @@ def upt_click(feature, tabs_value):
             figure = plot_graph(dff_one_loc_humidity, nama_upt, 'rh2m...', type)
             
             # Min - Max Value for Inactive Humidity Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min humidity')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'average humidity')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max humidity')
+            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_humidity 0')
+            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_humidity 0')
+            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_humidity 0')
 
             unit = '%'
 
             # Hideout dict
-            color_prop = 'average humidity'
+            color_prop = 'mean_humidity 0'
             min_abs = humid_min
             max_abs = humid_max
             colorscale = humid_colorscale
@@ -267,13 +274,13 @@ def upt_click(feature, tabs_value):
             unit = 'mm'
             
             # Min - Max Value for Inactive Precipitation Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min precipitation')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'average precipitation')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max precipitation')
+            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_precipitation 0')
+            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_precipitation 0')
+            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_precipitation 0')
             
 
             # Hideout dict
-            color_prop = 'average precipitation'
+            color_prop = 'mean_precipitation 0'
             min_abs = prec_min
             max_abs = prec_max
             colorscale = prec_colorscale
@@ -415,12 +422,13 @@ data_table_lokasi_prec = create_data_table(df_wmoid, df_pred_prec, 'precipitatio
 data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid.drop(columns=['Nama UPT']), on='lokasi').merge(data_table_lokasi_prec.drop(columns=['Nama UPT']), on='lokasi')
 print('data_table_lokasi')
 print(data_table_lokasi)
+print(data_table_lokasi.columns)
 
 
 # Make geopandas geometry for coordinates
 geometry = geopandas.points_from_xy(df_map.LON, df_map.LAT)
 upt_gpd = geopandas.GeoDataFrame(df_map, geometry=geometry)
-upt_gpd = pd.merge(upt_gpd, data_table_lokasi[['lokasi', 'average temp', 'average humidity', 'average precipitation']], on='lokasi')
+upt_gpd = pd.merge(upt_gpd, data_table_lokasi[['lokasi', 'mean_temp 0', 'mean_humidity 0', 'mean_precipitation 0']], on='lokasi')
 upt_gpd = upt_gpd.reset_index(drop=True)
 
 geojson = json.loads(upt_gpd.to_json())
@@ -433,7 +441,7 @@ upt = dl.GeoJSON(
     pointToLayer=point_to_layer,  # how to draw points
     onEachFeature=on_each_feature,  # add (custom) tooltip
     hideout=dict(
-        colorProp='average temp', 
+        colorProp='mean_temp 0', 
         circleOptions=dict(
             fillOpacity=1, 
             stroke=False, 
@@ -494,138 +502,125 @@ app.layout = html.Div([
     #             multi=True
     # ),
 
-    html.Div([
-        html.Div([  # Wrap the map and header in a div for layout
-            dl.Map(
-                [
-                    dl.TileLayer(), 
-                    dl.ScaleControl(position="bottomleft"),
-                    dl.FullScreenControl(),
-                    upt,
-                    colorbar,
-                ],
-                center=[-2.058210136999589, 116.78386542384145],
-                markerZoomAnimation = True,
-                id = 'dash-leaflet-map',
-                style={
-                    'height': '600px', 
-                    'width' : '750px'
-                    }
-                ),
+    html.Div([ # Wrap the map and header in a div for layout
+        html.Div([
             html.Div([
-                html.Div([
-                    html.Div([ # Div for map, metric, and graph
-                        html.Div([
-                            dcc.Tabs(
-                                id="graph-tabs",
-                                value='temp-tab',
-                                parent_className='custom-tabs',
-                                className='custom-tabs-container',
-                                children=[
-                                    dcc.Tab(
-                                        label='Temperature',
-                                        value='temp-tab',
-                                        className='custom-tab',
-                                        selected_className='custom-tab--selected'
-                                    ),
-                                    dcc.Tab(
-                                        label='Humidity',
-                                        value='humid-tab',
-                                        className='custom-tab',
-                                        selected_className='custom-tab--selected'
-                                    ),
-                                    dcc.Tab(
-                                        label='Precipitation',
-                                        value='prec-tab',
-                                        className='custom-tab',
-                                        selected_className='custom-tab--selected'
-                                    ),
-                            ]),
-                            dcc.Loading(
-                                dcc.Graph(
-                                    id='graph_per_loc',
-                                    figure={
-                                        'layout' : {
-                                            "xaxis": {
-                                            "visible": False
-                                            },
-                                            "yaxis": {
-                                                "visible": False
-                                            },
-                                            "annotations": [
-                                                {
-                                                    "text": "Click on one of the Station in the map to view graph.",
-                                                    "xref": "paper",
-                                                    "yref": "paper",
-                                                    "showarrow": False,
-                                                    "font": {
-                                                        "size": 28
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    } 
-                                ),
-                            ),
-                            dcc.RangeSlider(
-                                id='graph-metric',
-                                min=0,
-                                max=40,
-                                value=[0,0],
-                                step=None,
-                                vertical=False,
-                                disabled=True,
-                            ),
-
-                            html.Div([
-                                html.Div([
-                                    html.Label("Lowest Value", style={"font-weight": "bold"}),
-                                    html.Div(id='low-temp', style={"font-size": "20px"}, children='0')
-                                ], style={'width': '33%', 'display': 'inline-block'}),
-                                html.Div([
-                                    html.Label("Average Value", style={"font-weight": "bold"}),
-                                    html.Div(id='avg-temp', style={"font-size": "20px"}, children='0')
-                                ], style={'width': '33%', 'display': 'inline-block'}),
-                                html.Div([
-                                    html.Label("Highest Value", style={"font-weight": "bold"}),
-                                    html.Div(id='high-temp', style={"font-size": "20px"}, children='0')
-                                ], style={'width': '33%', 'display': 'inline-block'}),
-                            ]),
-
-                            
-                        ]),
-                    ], 
+                dcc.RangeSlider(
+                    id='graph-metric',
+                    min=0,
+                    max=40,
+                    value=[0,0],
+                    step=None,
+                    vertical=False,
+                    disabled=True,
+                ),
+                dl.Map(
+                    [
+                        dl.TileLayer(), 
+                        dl.ScaleControl(position="bottomleft"),
+                        dl.FullScreenControl(),
+                        upt,
+                        colorbar,
+                    ],
+                    center=[-2.058210136999589, 116.78386542384145],
+                    markerZoomAnimation = True,
+                    id = 'dash-leaflet-map',
                     style={
-                        'display': 'grid', 
-                        'grid-column': 'auto auto',
-                        'grid-auto-flow': 'column'
-                    }),
-                ], 
+                        'height': '450px', 
+                        'width' : '750px',
+                        'margin' : '4px',
+                        }
+                    ),
+                html.Div([
+                    html.Div([
+                        html.Label("Lowest Value", style={"font-weight": "bold"}),
+                        html.Div(id='low-temp', style={"font-size": "20px"}, children='0')
+                    ], style={'width': '33%', 'display': 'inline-block'}),
+                    html.Div([
+                        html.Label("Average Value", style={"font-weight": "bold"}),
+                        html.Div(id='avg-temp', style={"font-size": "20px"}, children='0')
+                    ], style={'width': '33%', 'display': 'inline-block'}),
+                    html.Div([
+                        html.Label("Highest Value", style={"font-weight": "bold"}),
+                        html.Div(id='high-temp', style={"font-size": "20px"}, children='0')
+                    ], style={'width': '33%', 'display': 'inline-block'}),
+                ],style={}),
+            ]),
+            html.Div([# Div for map, metric, and graph
+                dcc.Tabs(
+                    id="graph-tabs",
+                    value='temp-tab',
+                    parent_className='custom-tabs',
+                    className='custom-tabs-container',
+                    children=[
+                        dcc.Tab(
+                            label='Temperature',
+                            value='temp-tab',
+                            className='custom-tab',
+                            selected_className='custom-tab--selected'
+                        ),
+                        dcc.Tab(
+                            label='Humidity',
+                            value='humid-tab',
+                            className='custom-tab',
+                            selected_className='custom-tab--selected'
+                        ),
+                        dcc.Tab(
+                            label='Precipitation',
+                            value='prec-tab',
+                            className='custom-tab',
+                            selected_className='custom-tab--selected'
+                        ),
+                ]),
+                dcc.Loading(
+                    dcc.Graph(
+                        id='graph_per_loc',
+                        figure={
+                            'layout' : {
+                                "xaxis": {
+                                "visible": False
+                                },
+                                "yaxis": {
+                                    "visible": False
+                                },
+                                "annotations": [
+                                    {
+                                        "text": "Click on one of the Station in the map to view graph.",
+                                        "xref": "paper",
+                                        "yref": "paper",
+                                        "showarrow": False,
+                                        "font": {
+                                            "size": 28
+                                        }
+                                    }
+                                ]
+                            }
+                        } 
+                    ),
+                )], 
                 style={
                     'display': 'grid', 
-                    'grid-column': 'auto auto',
-                    'grid-auto-flow': 'row'
-                    }
-                ),  # Display elements side by side
-            ]),
-        ], 
-        style={
-            'display' : 'grid',
-            'grid-column': 'auto auto',
-            'grid-auto-flow': 'column'
-            }),
-        html.Div([# Div for other details such as comparison graph, data tables, and other metrics 
-                dash_table.DataTable(
-                    data=data_table_lokasi.to_dict('records'), 
-                    page_size=10)       
-                ], 
-                style= {
-                    'display': 'grid', 
-                    'margin' : '10px',
                     'grid-column': 'auto auto',
                     'grid-auto-flow': 'row'
                 }
-                ),
+            )],
+        style={
+                'display': 'grid', 
+                'grid-column': 'auto auto',
+                'grid-auto-flow': 'column'
+        }),
+        html.Div([# Div for other details such as comparison graph, data tables, and other metrics 
+            dash_table.DataTable(
+                data=data_table_lokasi.to_dict('records'), 
+                page_size=10)       
+            ], 
+            style= {
+                'display': 'grid', 
+                'margin' : '10px',
+                'grid-column': 'auto auto',
+                'grid-auto-flow': 'row'
+            }
+        ),
     ])
 ])
 
