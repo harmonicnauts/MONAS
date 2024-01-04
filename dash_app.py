@@ -341,6 +341,14 @@ def upt_click(feature, tabs_value):
                 False, False, False
                 )
 
+# @callback(
+#         Output("", ""),
+#         Input ("baselayer-layers-control", "baseLayer")
+#         ) # Marker OnClick Event)
+# def base_layer_click(base_name):
+#     print(base_name)
+
+
 
 def generate_output_df(variable_name, original_df, filtered_df, prediction_array):
     df_pred = pd.concat([original_df['Date'], filtered_df[['lokasi', variable_name]], pd.Series(prediction_array, index=filtered_df.index)], axis=1)
@@ -464,10 +472,10 @@ print(data_table_lokasi.columns)
 # Make geopandas geometry for coordinates
 geometry = geopandas.points_from_xy(df_map.LON, df_map.LAT)
 upt_gpd = geopandas.GeoDataFrame(df_map, geometry=geometry)
-upt_gpd = pd.merge(upt_gpd, data_table_lokasi[data_table_lokasi.drop(columns=['Nama UPT']).columns], on='lokasi')
-upt_gpd = upt_gpd.reset_index(drop=True)
+upt_gpd_merged = pd.merge(upt_gpd, data_table_lokasi[data_table_lokasi.drop(columns=['Nama UPT']).columns], on='lokasi')
+upt_gpd_merged = upt_gpd_merged.reset_index(drop=True)
 
-geojson = json.loads(upt_gpd.to_json())
+geojson = json.loads(upt_gpd_merged.to_json())
 geobuf = dlx.geojson_to_geobuf(geojson)
 upt = dl.GeoJSON(
     data=geobuf,
@@ -477,7 +485,7 @@ upt = dl.GeoJSON(
     pointToLayer=point_to_layer,  # how to draw points
     onEachFeature=on_each_feature,  # add (custom) tooltip
     hideout=dict(
-        colorProp='mean_temp 0', 
+        colorProp='mean_temp', 
         circleOptions=dict(
             fillOpacity=1, 
             stroke=False, 
@@ -487,7 +495,7 @@ upt = dl.GeoJSON(
             colorscale=temp_colorscale
             )
 )
-print('upt_gpd\n', upt_gpd)
+print('upt_gpd_merged\n', upt_gpd_merged)
 
 # Sort the data by Date
 # ina_nwp_input_sorted = ina_nwp_input_filtered.copy()
@@ -560,7 +568,7 @@ app.layout = html.Div([
                                 dl.BaseLayer(dl.LayerGroup(), name='2 Day forecast'),
                                 dl.BaseLayer(dl.LayerGroup(), name='3 Day forecast'),
                             ],
-                            id='layers-control',
+                            id='baselayer-layers-control',
                             collapsed=False
                         ),
                         upt,
