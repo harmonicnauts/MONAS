@@ -152,28 +152,28 @@ point_to_layer = assign(
 
 def create_data_table(df_wmoid, df_pred, col_name, merge_column='lokasi'):
     df_pred['Date'] = pd.to_datetime(df_pred['Date'])
-
     df_pred['day'] = df_pred['Date'].dt.day
 
-    df_pred_grouped  = df_pred.groupby([merge_column, 'Date', 'day'])['prediction'].agg(['max', 'mean', 'min']).astype('float64').round(1)
+    # Group by 'day' and calculate the averages
+    df_pred_grouped = df_pred.groupby([merge_column, 'day', 'Date']).agg({
+        'prediction': ['max', 'mean', 'min']
+    }).astype('float64').round(1).reset_index()
 
-    df_pred_grouped = df_pred_grouped.rename(columns={
-            'max': f'max_{col_name}',
-            'mean': f'mean_{col_name}',
-            'min': f'min_{col_name}'
-        })
+    # Rename columns
+    df_pred_grouped.columns = ['lokasi', 'day', 'Date', f'max_{col_name}', f'mean_{col_name}', f'min_{col_name}']
 
-    df_pred_grouped  = df_pred_grouped .reset_index()
+    # Convert 'Date' to a string format without timezone
+    df_pred_grouped['Date'] = df_pred_grouped['Date'].dt.tz_localize(None).dt.strftime('%Y-%m-%d')
 
-    df_pred_grouped ['Time'] = df_pred_grouped ['Date'].dt.tz_localize('UTC').dt.tz_convert('Asia/Bangkok').dt.strftime('%H:%M:%S')
+    # Group by 'day' and calculate the averages
+    df_pred_avg = df_pred_grouped.groupby(['lokasi', 'Date', 'day']).agg({
+        f'max_{col_name}': 'mean',
+        f'mean_{col_name}': 'mean',
+        f'min_{col_name}': 'mean'
+    }).astype('float64').round(1).reset_index()
 
-    df_pred_grouped ['Date'] = df_pred_grouped ['Date'].dt.tz_localize('UTC').dt.tz_convert('Asia/Bangkok').dt.strftime('%Y-%m-%d')
-
-    column_order = ['lokasi', 'day' ,'Date', 'Time' , f'max_{col_name}', f'mean_{col_name}', f'min_{col_name}']
-    df_pred_grouped = df_pred_grouped[column_order]
-
-
-    data_table_lokasi = pd.merge(df_wmoid, df_pred_grouped , how='inner', on=merge_column)
+    # Merge with df_wmoid
+    data_table_lokasi = pd.merge(df_wmoid, df_pred_avg, how='inner', on=merge_column)
 
     return data_table_lokasi
 
@@ -459,7 +459,7 @@ data_table_lokasi_humid = create_data_table(df_wmoid, df_pred_humid, 'humidity',
 data_table_lokasi_prec = create_data_table(df_wmoid, df_pred_prec, 'precipitation', merge_column='lokasi')
 
 # Merge the dataframes
-data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid.drop(columns=['Nama UPT', 'day']), on=['lokasi', 'Date', 'Time'], how='left').merge(data_table_lokasi_prec.drop(columns=['Nama UPT', 'day']), on=['lokasi', 'Date', 'Time'], how='left')
+data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid.drop(columns=['Nama UPT', 'day']), on=['lokasi', 'Date'], how='left').merge(data_table_lokasi_prec.drop(columns=['Nama UPT', 'day']), on=['lokasi', 'Date'], how='left')
 print('data_table_lokasi')
 print(data_table_lokasi)
 print(data_table_lokasi.columns)
