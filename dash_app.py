@@ -155,22 +155,18 @@ def create_data_table(df_wmoid, df_pred, col_name, merge_column='lokasi'):
     df_pred['day'] = df_pred['Date'].dt.day
 
     # Group by 'day' and calculate the averages
-    df_pred_grouped = df_pred.groupby([merge_column, 'day', 'Date']).agg({
+    df_pred_avg = df_pred.groupby(['lokasi', 'day']).agg({
         'prediction': ['max', 'mean', 'min']
     }).astype('float64').round(1).reset_index()
 
     # Rename columns
-    df_pred_grouped.columns = ['lokasi', 'day', 'Date', f'max_{col_name}', f'mean_{col_name}', f'min_{col_name}']
+    df_pred_avg.columns = ['lokasi', 'day', f'max_{col_name}', f'mean_{col_name}', f'min_{col_name}']
 
     # Convert 'Date' to a string format without timezone
-    df_pred_grouped['Date'] = df_pred_grouped['Date'].dt.tz_localize(None).dt.strftime('%Y-%m-%d')
+    df_pred_avg['Date'] = df_pred_avg['day'].apply(lambda x: f'2023-10-{x:02d}')
 
-    # Group by 'day' and calculate the averages
-    df_pred_avg = df_pred_grouped.groupby(['lokasi', 'Date', 'day']).agg({
-        f'max_{col_name}': 'mean',
-        f'mean_{col_name}': 'mean',
-        f'min_{col_name}': 'mean'
-    }).astype('float64').round(1).reset_index()
+    # Rearrange columns
+    df_pred_avg = df_pred_avg[['lokasi', 'day', 'Date', f'max_{col_name}', f'mean_{col_name}', f'min_{col_name}']]
 
     # Merge with df_wmoid
     data_table_lokasi = pd.merge(df_wmoid, df_pred_avg, how='inner', on=merge_column)
@@ -272,14 +268,14 @@ def upt_click(feature, tabs_value):
             figure = plot_graph(dff_one_loc_temp, nama_upt, 'suhu2m.degC.', type)
 
             # Min - Max Value for Inactive Temperature Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_temp 0')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_temp 0')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_temp 0')
+            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_temp')
+            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_temp')
+            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_temp')
 
             unit = '°C'
 
             # Hideout dict
-            color_prop = 'mean_temp 0'
+            color_prop = 'mean_temp'
             min_abs = temp_min
             max_abs = temp_max
             colorscale = temp_colorscale
@@ -292,14 +288,14 @@ def upt_click(feature, tabs_value):
             figure = plot_graph(dff_one_loc_humidity, nama_upt, 'rh2m...', type)
             
             # Min - Max Value for Inactive Humidity Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_humidity 0')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_humidity 0')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_humidity 0')
+            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_humidity')
+            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_humidity')
+            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_humidity')
 
             unit = '%'
 
             # Hideout dict
-            color_prop = 'mean_humidity 0'
+            color_prop = 'mean_humidity'
             min_abs = humid_min
             max_abs = humid_max
             colorscale = humid_colorscale
@@ -313,13 +309,13 @@ def upt_click(feature, tabs_value):
             unit = 'mm'
             
             # Min - Max Value for Inactive Precipitation Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_precipitation 0')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_precipitation 0')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_precipitation 0')
+            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_precipitation')
+            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_precipitation')
+            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_precipitation')
             
 
             # Hideout dict
-            color_prop = 'mean_precipitation 0'
+            color_prop = 'mean_precipitation'
             min_abs = prec_min
             max_abs = prec_max
             colorscale = prec_colorscale
