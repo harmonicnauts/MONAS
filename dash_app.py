@@ -490,7 +490,7 @@ upt = dl.GeoJSON(
 )
 print('upt_gpd\n', upt_gpd)
 
-
+keys = ['key1', 'key2', 'key3']
 
 # Sort the data by Date
 # ina_nwp_input_sorted = ina_nwp_input_filtered.copy()
@@ -556,6 +556,16 @@ app.layout = html.Div([
                         dl.TileLayer(), 
                         dl.ScaleControl(position="bottomleft"),
                         dl.FullScreenControl(),
+                        dl.LayersControl(
+                            [
+                                dl.BaseLayer(dl.TileLayer(), name='Current date'),
+                                dl.BaseLayer(dl.LayerGroup(), name='1 Day forecast'),
+                                dl.BaseLayer(dl.LayerGroup(), name='2 Day forecast'),
+                                dl.BaseLayer(dl.LayerGroup(), name='3 Day forecast'),
+                            ],
+                            id='layers-control',
+                            collapsed=False
+                        ),
                         upt,
                         colorbar,
                     ],
@@ -568,6 +578,7 @@ app.layout = html.Div([
                         'margin' : '4px',
                         }
                     ),
+                    
                 html.Div([
                     html.Div([
                         html.Label("Today's Min Value", style={"font-weight": "bold"}),
@@ -673,5 +684,5 @@ app.layout = html.Div([
 
 
 if __name__ == '__main__':
-    app.run_server(host= '0.0.0.0',debug=False)
-    # app.run_server(host= '127.0.0.1',debug=True)
+    # app.run_server(host= '0.0.0.0',debug=False)
+    app.run_server(host= '127.0.0.1',debug=True)
