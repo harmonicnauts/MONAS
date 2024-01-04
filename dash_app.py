@@ -151,27 +151,30 @@ point_to_layer = assign(
     """)
 
 def create_data_table(df_wmoid, df_pred, col_name, merge_column='lokasi'):
-    # Convert datetime64 column to datetime if not already
     df_pred['Date'] = pd.to_datetime(df_pred['Date'])
-    
-    # Extract day from datetime
-    df_pred['day'] = df_pred['Date'].dt.day
-    
-    # Group by both merge_column and day
-    grouped_data = df_pred.groupby([merge_column, 'day'])['prediction'].agg(['max', 'mean', 'min']).astype('float64').round(1)
-    
-    # Pivot the table to have days as columns
-    grouped_data = grouped_data.pivot_table(index=merge_column, columns='day', values=['max', 'mean', 'min'], aggfunc='first')
-    
-    # Flatten the multi-index columns
-    grouped_data.columns = [f'{agg}_{col_name} {i % 4}' for i, (agg, day) in enumerate(grouped_data.columns)]
 
-    print('grouped_data')
-    print(grouped_data)
-    
-    # Merge with df_wmoid
-    data_table_lokasi = df_wmoid.merge(grouped_data, left_on=merge_column, right_index=True)
-    
+    df_pred['day'] = df_pred['Date'].dt.day
+
+    df_pred_grouped  = df_pred.groupby([merge_column, 'Date', 'day'])['prediction'].agg(['max', 'mean', 'min']).astype('float64').round(1)
+
+    df_pred_grouped = df_pred_grouped.rename(columns={
+            'max': f'max_{col_name}',
+            'mean': f'mean_{col_name}',
+            'min': f'min_{col_name}'
+        })
+
+    df_pred_grouped  = df_pred_grouped .reset_index()
+
+    df_pred_grouped ['Time'] = df_pred_grouped ['Date'].dt.tz_localize('UTC').dt.tz_convert('Asia/Bangkok').dt.strftime('%H:%M:%S')
+
+    df_pred_grouped ['Date'] = df_pred_grouped ['Date'].dt.tz_localize('UTC').dt.tz_convert('Asia/Bangkok').dt.strftime('%Y-%m-%d')
+
+    column_order = ['lokasi', 'day' ,'Date', 'Time' , f'max_{col_name}', f'mean_{col_name}', f'min_{col_name}']
+    df_pred_grouped = df_pred_grouped[column_order]
+
+
+    data_table_lokasi = pd.merge(df_wmoid, df_pred_grouped , how='inner', on=merge_column)
+
     return data_table_lokasi
 
 
@@ -456,7 +459,7 @@ data_table_lokasi_humid = create_data_table(df_wmoid, df_pred_humid, 'humidity',
 data_table_lokasi_prec = create_data_table(df_wmoid, df_pred_prec, 'precipitation', merge_column='lokasi')
 
 # Merge the dataframes
-data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid.drop(columns=['Nama UPT']), on='lokasi').merge(data_table_lokasi_prec.drop(columns=['Nama UPT']), on='lokasi')
+data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid.drop(columns=['Nama UPT', 'day']), on=['lokasi', 'Date', 'Time'], how='left').merge(data_table_lokasi_prec.drop(columns=['Nama UPT', 'day']), on=['lokasi', 'Date', 'Time'], how='left')
 print('data_table_lokasi')
 print(data_table_lokasi)
 print(data_table_lokasi.columns)
@@ -489,8 +492,6 @@ upt = dl.GeoJSON(
             )
 )
 print('upt_gpd\n', upt_gpd)
-
-keys = ['key1', 'key2', 'key3']
 
 # Sort the data by Date
 # ina_nwp_input_sorted = ina_nwp_input_filtered.copy()
