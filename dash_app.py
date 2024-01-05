@@ -100,33 +100,29 @@ on_each_feature = assign(
                         <thead>
                             <tr>
                                 <th></th>
-                                <th>Today</th>
-                                <th>1 Day Forecast</th>
-                                <th>2 Day Forecast</th>
-                                <th>3 Day Forecast</th>
+                                <th>Max Value</th>
+                                <th>Mean Value</th>
+                                <th>Min Value</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>Temperature</td>
-                                <td>${feature['properties']['mean_temp 0']}</td>
-                                <td>${feature['properties']['mean_temp 1']}</td>
-                                <td>${feature['properties']['mean_temp 2']}</td>
-                                <td>${feature['properties']['mean_temp 3']}</td>
+                                <td>${feature['properties']['max_temp']}</td>
+                                <td>${feature['properties']['mean_temp']}</td>
+                                <td>${feature['properties']['min_temp']}</td>
                             </tr>
                             <tr>
                                 <td>Humidity</td>
-                                <td>${feature['properties']['mean_humidity 0']}</td>
-                                <td>${feature['properties']['mean_humidity 1']}</td>
-                                <td>${feature['properties']['mean_humidity 2']}</td>
-                                <td>${feature['properties']['mean_humidity 3']}</td>
+                                <td>${feature['properties']['max_humidity']}</td>
+                                <td>${feature['properties']['mean_humidity']}</td>
+                                <td>${feature['properties']['min_humidity']}</td>
                             </tr>
                             <tr>
                                 <td>Precipitation</td>
-                                <td>${feature['properties']['mean_precipitation 0']}</td>
-                                <td>${feature['properties']['mean_precipitation 1']}</td>
-                                <td>${feature['properties']['mean_precipitation 2']}</td>
-                                <td>${feature['properties']['mean_precipitation 3']}</td>
+                                <td>${feature['properties']['max_precipitation']}</td>
+                                <td>${feature['properties']['mean_precipitation']}</td>
+                                <td>${feature['properties']['min_precipitation']}</td>
                             </tr>
                         </tbody>
                     </table>
