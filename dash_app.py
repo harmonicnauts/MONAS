@@ -341,12 +341,21 @@ def upt_click(feature, tabs_value):
                 False, False, False
                 )
 
-# @callback(
-#         Output("", ""),
-#         Input ("baselayer-layers-control", "baseLayer")
-#         ) # Marker OnClick Event)
-# def base_layer_click(base_name):
-#     print(base_name)
+@callback(
+        Output("geojson", "data"),
+        Input ("baselayer-layers-control", "baseLayer")
+        ) # Marker OnClick Event)
+def base_layer_click(base_name):
+    geojson_data = pd.merge(upt_gpd, data_table_lokasi[data_table_lokasi.drop(columns=['Nama UPT']).columns], on='lokasi')
+    # print('geojson_in_callback\n', geojson_data)
+    # print('Selected base name:', base_name)
+    # print('Unique dates in data_table_lokasi:', data_table_lokasi['Date'].unique())
+    geojson_data = geojson_data[geojson_data['Date'] == base_name]
+    geojson_data = geojson_data.reset_index(drop=True)
+
+    geojson_data = json.loads(geojson_data.to_json())
+    goejson_data_geobuf = dlx.geojson_to_geobuf(geojson_data)
+    return(goejson_data_geobuf)
 
 
 
@@ -468,12 +477,17 @@ print('data_table_lokasi')
 print(data_table_lokasi)
 print(data_table_lokasi.columns)
 
+# Base layer values
+unique_dates = data_table_lokasi['Date'].unique()
+baselayers = [dl.BaseLayer(dl.LayerGroup(), name=date, checked=(index == 0)) for index, date in enumerate(unique_dates)]
+
 
 # Make geopandas geometry for coordinates
 geometry = geopandas.points_from_xy(df_map.LON, df_map.LAT)
 upt_gpd = geopandas.GeoDataFrame(df_map, geometry=geometry)
 upt_gpd_merged = pd.merge(upt_gpd, data_table_lokasi[data_table_lokasi.drop(columns=['Nama UPT']).columns], on='lokasi')
 upt_gpd_merged = upt_gpd_merged.reset_index(drop=True)
+print('geojson_outside_callback\n', upt_gpd_merged)
 
 geojson = json.loads(upt_gpd_merged.to_json())
 geobuf = dlx.geojson_to_geobuf(geojson)
@@ -523,7 +537,7 @@ app.layout = html.Div([
                     align="center",
                     className="g-0 d-flex flex-column align-items-center justify m-2",
                 ),
-                html.H1(children='MONAS Dashboard'),
+                html.H1(children=app.title),
                 ],
                 href="#",
                 style={
@@ -556,18 +570,14 @@ app.layout = html.Div([
                     vertical=False,
                     disabled=True,
                 ),
+                # html.H1(children="TEST", id="test_h1"),
                 dl.Map(
                     [
                         dl.TileLayer(), 
                         dl.ScaleControl(position="bottomleft"),
                         dl.FullScreenControl(),
                         dl.LayersControl(
-                            [
-                                dl.BaseLayer(dl.TileLayer(), name='Current date'),
-                                dl.BaseLayer(dl.LayerGroup(), name='1 Day forecast'),
-                                dl.BaseLayer(dl.LayerGroup(), name='2 Day forecast'),
-                                dl.BaseLayer(dl.LayerGroup(), name='3 Day forecast'),
-                            ],
+                            baselayers  ,
                             id='baselayer-layers-control',
                             collapsed=False
                         ),
@@ -689,5 +699,5 @@ app.layout = html.Div([
 
 
 if __name__ == '__main__':
-    # app.run_server(host= '0.0.0.0',debug=False)
-    app.run_server(host= '127.0.0.1',debug=True)
+    app.run_server(host= '0.0.0.0',debug=False)
+    # app.run_server(host= '127.0.0.1',debug=True)
