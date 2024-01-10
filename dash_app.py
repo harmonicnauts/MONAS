@@ -230,7 +230,6 @@ def get_datatable(wmoid_lokasi, prop_lokasi, column):
         Output("map-colorbar", "max"), # colorbar's maximum value
         Output("map-colorbar", "unit"), # colorbar's unit
 
-        Output("low-temp", "children"), Output("avg-temp", "children"), Output("high-temp", "children"),
         Output("temp-tab", "disabled"), Output("humid-tab", "disabled"), Output("prec-tab", "disabled"),
 
         Input ("geojson", "clickData"), # Marker OnClick Event
@@ -333,7 +332,6 @@ def upt_click(feature, tabs_value):
         return (slider_value, min_abs, max_abs, figure, 
                 hideout, 
                 colorscale, min_abs, max_abs, unit,
-                min, avg, max,
                 False, False, False
                 )
 
@@ -589,21 +587,6 @@ app.layout = html.Div([
                         'margin' : '4px',
                         }
                     ),
-                    
-                html.Div([
-                    html.Div([
-                        html.Label("Today's Min Value", style={"font-weight": "bold"}),
-                        html.Div(id='low-temp', style={"font-size": "20px"}, children='0')
-                    ], style={'width': '33%', 'display': 'inline-block'}),
-                    html.Div([
-                        html.Label("Today's Average Value", style={"font-weight": "bold"}),
-                        html.Div(id='avg-temp', style={"font-size": "20px"}, children='0')
-                    ], style={'width': '33%', 'display': 'inline-block'}),
-                    html.Div([
-                        html.Label("Today's Max Value", style={"font-weight": "bold"}),
-                        html.Div(id='high-temp', style={"font-size": "20px"}, children='0')
-                    ], style={'width': '33%', 'display': 'inline-block'}),
-                ],style={}),
             ]),
             html.Div([# Div for map, metric, and graph
                 dcc.Tabs(
@@ -695,5 +678,5 @@ app.layout = html.Div([
 
 
 if __name__ == '__main__':
-    app.run_server(host= '0.0.0.0',debug=False)
-    # app.run_server(host= '127.0.0.1',debug=True)
+    # app.run_server(host= '0.0.0.0',debug=False)
+    app.run_server(host= '127.0.0.1',debug=True)
