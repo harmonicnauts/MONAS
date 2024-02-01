@@ -10,13 +10,13 @@ import dash_bootstrap_components as dbc
 from dash_extensions.javascript import assign
 from xgboost import XGBRegressor
 import pickle
-# import joblib
+import joblib
 import os
 
-# List of models
-pathway = './models'
+# # List of models
+# pathway = './models'
 
-files = [f for f in os.listdir(pathway)]
+# files = [f for f in os.listdir(pathway)]
 
 
 
@@ -69,9 +69,8 @@ ina_nwp_input_filtered = ina_nwp_input_filtered.rename(
 })
 
 
-def predict_xgb(model_path, columns_to_drop, input_df):
-    model = XGBRegressor()
-    model.load_model(model_path)
+def predict_model(model_path, columns_to_drop, input_df):
+    model = joblib.load(model_path)
     input_data = input_df.drop(columns=columns_to_drop)
     predictions = model.predict(input_data)
     return predictions
@@ -361,29 +360,20 @@ def generate_output_df(variable_name, original_df, filtered_df, prediction_array
 
 
 # Load ML Models
-with open('./models/huber_regressor_bad.pkl','rb') as f:
-    prec_model = pickle.load(f)
+prec_model_path = './models/Temp_xgb_tuned_RMSE_1_441.model'
+prec_columns_to_drop = ['clmix.kg.kg.', 'hcloud...', 'wamix.kg.kg.', 'prec_nwp', 'mcloud...', 'lcloud...']
+prec_pred = predict_model(prec_model_path, prec_columns_to_drop, ina_nwp_input_filtered)
 
 # Predict temperature
-temp_model_path = './models/Temp_xgb_tuned_RMSE_1_441.json'
+temp_model_path = './models/Temp_xgb_tuned_RMSE_1_441.model'
 temp_columns_to_drop = ['lcloud...', 'mcloud...', 'hcloud...', 'clmix.kg.kg.', 'wamix.kg.kg.', 'prec_nwp']
-temp_pred = predict_xgb(temp_model_path, temp_columns_to_drop, ina_nwp_input_filtered)
+temp_pred = predict_model(temp_model_path, temp_columns_to_drop, ina_nwp_input_filtered)
 
 # Predict humidity
-humid_model_path = './models/xgbregressor_humidity.json'
+humid_model_path = './models/xgbregressor_humidity.model'
 humid_columns_to_drop = ['prec_nwp', 'mcloud...', 'wamix.kg.kg.', 'clmix.kg.kg.', 'lcloud...', 'hcloud...']
-humid_pred = predict_xgb(humid_model_path, humid_columns_to_drop, ina_nwp_input_filtered)
+humid_pred = predict_model(humid_model_path, humid_columns_to_drop, ina_nwp_input_filtered)
 
-# Predict precipitation
-prec_pred = prec_model.predict(ina_nwp_input_filtered[[
-    'lokasi', 'suhu2m.degC.', 'dew2m.degC.', 'rh2m...', 'wspeed.m.s.',
-    'wdir.deg.', 'lcloud...', 'mcloud...', 'hcloud...', 'surpre.Pa.',
-    'clmix.kg.kg.', 'wamix.kg.kg.', 'outlr.W.m2.', 'pblh.m.', 'lifcl.m.',
-    'cape.j.kg.', 'mdbz', 't950.degC.', 'rh950...', 'ws950.m.s.',
-    'wd950.deg.', 't800.degC.', 'rh800...', 'ws800.m.s.', 'wd800.deg.',
-    't500.degC.', 'rh500...', 'ws500.m.s.', 'wd500.deg.', 'ELEV',
-    'prec_nwp'
-]])
 
 
 # OUTPUT temperature
