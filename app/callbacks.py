@@ -1,5 +1,7 @@
 from dash import callback, Output, Input
-from scripts.utility_scripts import *
+import dash_leaflet.express as dlx
+from data_preprocess import *
+import json
 
 # Callback function for changing 
 @callback(
@@ -48,9 +50,9 @@ def upt_click(feature, tabs_value):
             figure = plot_graph(dff_one_loc_temp, nama_upt, 'suhu2m.degC.', type)
 
             # Min - Max Value for Inactive Temperature Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_temp')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_temp')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_temp')
+            min = get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, 'min_temp')
+            avg = get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, 'mean_temp')
+            max = get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, 'max_temp')
 
             unit = '°C'
 
@@ -68,9 +70,9 @@ def upt_click(feature, tabs_value):
             figure = plot_graph(dff_one_loc_humidity, nama_upt, 'rh2m...', type)
             
             # Min - Max Value for Inactive Humidity Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_humidity')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_humidity')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_humidity')
+            min = get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, 'min_humidity')
+            avg = get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, 'mean_humidity')
+            max = get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, 'max_humidity')
 
             unit = '%'
 
@@ -89,9 +91,9 @@ def upt_click(feature, tabs_value):
             unit = 'mm'
             
             # Min - Max Value for Inactive Precipitation Slider
-            min = get_datatable(wmoid_lokasi, prop_lokasi, 'min_precipitation')
-            avg = get_datatable(wmoid_lokasi, prop_lokasi, 'mean_precipitation')
-            max = get_datatable(wmoid_lokasi, prop_lokasi, 'max_precipitation')
+            min = get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, 'min_precipitation')
+            avg = get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, 'mean_precipitation')
+            max = get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, 'max_precipitation')
             
 
             # Hideout dict
