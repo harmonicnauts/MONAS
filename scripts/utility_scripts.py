@@ -1,7 +1,12 @@
 import pandas as pd
 import plotly.express as px
-import dash_leaflet.express as dlx
-import json
+import joblib
+
+def predict_model(model_path, columns_to_drop, input_df):
+    model = joblib.load(model_path)
+    input_data = input_df.drop(columns=columns_to_drop)
+    predictions = model.predict(input_data)
+    return predictions
 
 
 def create_data_table(df_wmoid, df_pred, col_name, merge_column='lokasi'):
@@ -67,7 +72,7 @@ def plot_graph(df_graph, upt_name, nwp_output, graph_type):
                 )
         return figure
 
-def get_datatable(wmoid_lokasi, prop_lokasi, column):
+def get_datatable(data_table_lokasi, wmoid_lokasi, prop_lokasi, column):
     return data_table_lokasi[wmoid_lokasi == prop_lokasi][column].iloc[0]
 
 
