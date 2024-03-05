@@ -1,3 +1,4 @@
 Dash
 .vercel
 test_data_value.ipynb
+app/__pycache__/
