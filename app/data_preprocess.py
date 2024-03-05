@@ -1,5 +1,11 @@
 import pandas as pd
-from scripts.utility_scripts import *
+import json
+import dash_leaflet.express as dlx
+import dash_leaflet as dl
+import geopandas
+from utility_scripts import *
+from geojson_scripts import *
+
 
 # Load dataframes
 df_wmoid = pd.read_excel('./Data/daftar_wmoid.xlsx') # UPT Dataframe
@@ -130,3 +136,43 @@ humid_max = 100
 
 prec_min = 0
 prec_max = 60
+
+
+# Example usage with 'lokasi' as the merging column
+data_table_lokasi_temp = create_data_table(df_wmoid, df_pred_temp, 'temp', merge_column='lokasi')
+data_table_lokasi_humid = create_data_table(df_wmoid, df_pred_humid, 'humidity', merge_column='lokasi')
+data_table_lokasi_prec = create_data_table(df_wmoid, df_pred_prec, 'precipitation', merge_column='lokasi')
+
+# Merge the dataframes
+data_table_lokasi = data_table_lokasi_temp.merge(data_table_lokasi_humid.drop(columns=['Nama UPT', 'day']), on=['lokasi', 'Date'], how='left').merge(data_table_lokasi_prec.drop(columns=['Nama UPT', 'day']), on=['lokasi', 'Date'], how='left')
+print('data_table_lokasi')
+print(data_table_lokasi)
+print(data_table_lokasi.columns)
+
+# Make geopandas geometry for coordinates
+geometry = geopandas.points_from_xy(df_map.LON, df_map.LAT)
+upt_gpd = geopandas.GeoDataFrame(df_map, geometry=geometry)
+upt_gpd_merged = pd.merge(upt_gpd, data_table_lokasi[data_table_lokasi.drop(columns=['Nama UPT']).columns], on='lokasi')
+upt_gpd_merged = upt_gpd_merged.reset_index(drop=True)
+print('geojson_outside_callback\n', upt_gpd_merged)
+
+geojson = json.loads(upt_gpd_merged.to_json())
+geobuf = dlx.geojson_to_geobuf(geojson)
+upt = dl.GeoJSON(
+    data=geobuf,
+    id='geojson',
+    format='geobuf',
+    zoomToBounds=True,  # when true, zooms to bounds when data changes
+    pointToLayer=point_to_layer,  # how to draw points
+    onEachFeature=on_each_feature,  # add (custom) tooltip
+    hideout=dict(
+        colorProp='mean_temp', 
+        circleOptions=dict(
+            fillOpacity=1, 
+            stroke=False, 
+            radius=5),
+            min=temp_min, 
+            max=temp_max, 
+            colorscale=temp_colorscale
+            )
+)
