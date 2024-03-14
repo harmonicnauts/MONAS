@@ -37,6 +37,7 @@ app.layout = html.Div([
                 ),
                 html.H1(children=app.title),
                 ],
+                className='header',
                 href="#",
             ),
         ]
@@ -81,7 +82,8 @@ app.layout = html.Div([
                     markerZoomAnimation = True,
                     id = 'dash-leaflet-map',
                     ),
-            ]),
+            ], className='top-div',
+            ),
             html.Div([# Div for map, metric, and graph
                 dcc.Tabs(
                     id="graph-tabs",
@@ -140,8 +142,8 @@ app.layout = html.Div([
                             }
                         },
                     ),
-                )], 
-            )],
+                )], className='bottom-div'
+            )], className='wrapper',
             ),
 
     ])
