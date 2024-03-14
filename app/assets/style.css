@@ -1,0 +1,32 @@
+/* .top-div{
+
+} */
+
+.wrapper{
+  display: grid; 
+  grid-column: auto auto;
+  grid-auto-flow: column;
+}
+
+.bottom-div{
+  display: grid; 
+  grid-column: auto auto;
+  grid-auto-flow: row;
+}
+
+.dash-leaflet-map{
+  height: 80vh;
+  width : 1000px;
+  margin : 4px;
+}
+
+.header{
+  display : flex;
+  align-content: center;
+  justify-content : center;
+  flex-direction : row;
+}
+
+.graph_per_loc{
+  height : 80vh
+}
