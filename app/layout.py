@@ -38,13 +38,6 @@ app.layout = html.Div([
                 html.H1(children=app.title),
                 ],
                 href="#",
-                style={
-                    "textDecoration": "none",
-                    "display" : "flex",
-                    "align-content": "center",
-                    "justify-content" : "center",
-                    "flex-direction" : "row",
-                    },
             ),
         ]
     ),
@@ -85,11 +78,6 @@ app.layout = html.Div([
                     center=[-2.058210136999589, 116.78386542384145],
                     markerZoomAnimation = True,
                     id = 'dash-leaflet-map',
-                    style={
-                        'height': '80vh', 
-                        'width' : '1000px',
-                        'margin' : '4px',
-                        }
                     ),
             ]),
             html.Div([# Div for map, metric, and graph
@@ -148,34 +136,10 @@ app.layout = html.Div([
                                 ]
                             }
                         },
-                        style={
-                        'height': '80vh',
-                        }
                     ),
                 )], 
-                style={
-                    'display': 'grid', 
-                    'grid-column': 'auto auto',
-                    'grid-auto-flow': 'row'
-                }
             )],
-        style={
-                'display': 'grid', 
-                'grid-column': 'auto auto',
-                'grid-auto-flow': 'column'
-        }),
-        # html.Div([# Div for other details such as comparison graph, data tables, and other metrics 
-        #     dash_table.DataTable(
-        #         data=data_table_lokasi.to_dict('records'), 
-        #         page_size=10)       
-        #     ], 
-        #     style= {
-        #         'display': 'grid', 
-        #         'margin' : '10px',
-        #         'grid-column': 'auto auto',
-        #         'grid-auto-flow': 'row'
-        #     }
-        # ),
+            ),
     ])
 ])
   
