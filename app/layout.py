@@ -54,6 +54,7 @@ app.layout = html.Div([
             html.Div([
                 dcc.RangeSlider(
                     id='graph-metric',
+                    className='graph-metric',
                     min=0,
                     max=40,
                     value=[0,0],
@@ -75,6 +76,7 @@ app.layout = html.Div([
                         upt,
                         colorbar,
                     ],
+                    className='dash-leaflet-map',
                     center=[-2.058210136999589, 116.78386542384145],
                     markerZoomAnimation = True,
                     id = 'dash-leaflet-map',
@@ -115,6 +117,7 @@ app.layout = html.Div([
                 dcc.Loading(
                     dcc.Graph(
                         id='graph_per_loc',
+                        className='graph_per_loc',
                         figure={
                             'layout' : {
                                 "xaxis": {
@@ -140,6 +143,7 @@ app.layout = html.Div([
                 )], 
             )],
             ),
+
     ])
 ])
   
